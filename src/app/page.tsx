@@ -29,9 +29,9 @@ export default function Inicio() {
               <a className="btn btn-pri btn-lg" href={waLink(MENSAJE_GENERAL)} target="_blank" rel="noopener">
                 Escríbenos por WhatsApp
               </a>
-              <a className="btn btn-lg" href={PAGINAS_WEB.liga} target="_blank" rel="noopener">
+              <Link className="btn btn-lg" href={PAGINAS_WEB.liga}>
                 Ver páginas web →
-              </a>
+              </Link>
             </div>
           </section>
         </div>
@@ -51,11 +51,9 @@ export default function Inicio() {
 
           <div className="grid gap-4">
             <h2 className={GRUPO_LABEL}>{PAGINAS_WEB.grupo}</h2>
-            <a
+            <Link
               className="card md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-[18px]"
               href={PAGINAS_WEB.liga}
-              target="_blank"
-              rel="noopener"
             >
               <Icon name="web" />
               <div className="grid gap-2 md:flex-[1_1_320px]">
@@ -64,9 +62,9 @@ export default function Inicio() {
               </div>
               <div className="flex items-center justify-between gap-4 pt-4 text-[0.9rem] md:pt-0">
                 <b className="font-extrabold">{PAGINAS_WEB.precio}</b>
-                <span className="font-bold text-solar">Ver portafolio web ↗</span>
+                <span className="font-bold text-solar">Ver páginas →</span>
               </div>
-            </a>
+            </Link>
           </div>
 
           {grupos.map((g) => (

@@ -45,14 +45,14 @@ export type Solucion = {
   demoReal: string | null;
 };
 
-/** Tarjeta de páginas web: no tiene demo propio, abre el portafolio. */
+/** Tarjeta de páginas web: abre el portafolio dentro de este mismo sitio (/paginas-web). */
 export const PAGINAS_WEB = {
   nombre: "Páginas web y tiendas en línea",
   grupo: "Páginas web",
   texto:
-    "5 páginas de clientes en operación y 23 muestras por giro, con paquetes y precios. Ábrelas y navégalas en vivo.",
+    "6 páginas de clientes en operación y 23 muestras por giro, con paquetes y precios. Ábrelas y navégalas aquí mismo.",
   precio: "desde $4,900",
-  liga: "https://portafolio-solvera.vercel.app",
+  liga: "/paginas-web",
 };
 
 export const SOLUCIONES: Solucion[] = [
