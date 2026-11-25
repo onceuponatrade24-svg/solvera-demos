@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tema claro único, a propósito (marca Solvera). */
+:root { color-scheme: light; }
+html { background: #fff; }
+body { background: #fff; color: #1a1a1a; font-size: 16px; line-height: 1.6; overflow-x: hidden; }
+h1, h2, h3, h4, h5 { text-wrap: balance; }
+:focus-visible { outline: 2px solid #ff6a00; outline-offset: 3px; }
+
+@layer components {
+  .wrap { @apply mx-auto w-full max-w-wrap px-5; }
+
+  /* Aura durazno de los encabezados */
+  .aura {
+    background:
+      radial-gradient(900px 520px at 78% -8%, rgba(255, 138, 0, 0.18), transparent 60%),
+      radial-gradient(700px 480px at 6% 14%, rgba(255, 184, 0, 0.12), transparent 55%),
+      linear-gradient(#fff 0%, #fff6ee 100%);
+  }
+  .peach-band { background: linear-gradient(#fff 0%, #fff6ee 100%); }
+
+  /* Palabra clave de los títulos */
+  .gradtxt {
+    background: linear-gradient(100deg, #ff6a00 0%, #ff8a00 45%, #ffb800 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Etiqueta pequeña con raya amarilla */
+  .eyebrow {
+    @apply flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-ink;
+  }
+  .eyebrow::before { content: ""; width: 22px; height: 2px; background: #ffb800; flex: none; }
+
+  .label { @apply text-xs font-bold uppercase tracking-[0.18em]; }
+
+  /* Botones en píldora */
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-line2 bg-white px-5 py-[11px] text-[14.5px] font-semibold no-underline;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  }
+  .btn:hover { border-color: #1a1a1a; }
+  .btn-pri {
+    @apply border-0 text-white;
+    background: linear-gradient(100deg, #ff6a00, #ff8a00);
+    box-shadow: 0 12px 30px -10px rgba(255, 106, 0, 0.55);
+  }
+  .btn-pri:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -12px rgba(255, 106, 0, 0.7); }
+  .btn-lg { @apply px-[26px] py-4 text-base; }
+
+  /* Tarjetas */
+  .card {
+    @apply flex flex-col gap-2.5 rounded-[24px] border border-line bg-white p-7 no-underline;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s;
+  }
+  .card:hover { transform: translateY(-6px); box-shadow: 0 30px 60px -28px rgba(26, 26, 26, 0.28); }
+  .icon-tile {
+    @apply h-12 w-12 flex-none rounded-[14px] bg-peach p-[11px];
+    stroke: #ff6a00; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* Página de solución: celular en una columna; escritorio demo a la izquierda, brief a la derecha */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; grid-template-areas: "stage" "brief" "video" "cta"; }
+  @media (min-width: 921px) {
+    .split {
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+      grid-template-areas: "stage brief" "video cta";
+      align-items: start;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
