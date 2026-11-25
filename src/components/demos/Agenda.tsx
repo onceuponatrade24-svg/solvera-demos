@@ -68,7 +68,7 @@ const NEGOCIOS: Negocio[] = [
     etiqueta: "Dentista",
     nombre: "Clínica Dental Primavera",
     liga: "citas.dentalprimavera.mx",
-    direccion: "Av. Chapultepec 480, Guadalajara",
+    direccion: "Av. Hidalgo 1820, Guadalajara",
     color: "#0e8577",
     colorSuave: "#e3f5f2",
     servicios: [

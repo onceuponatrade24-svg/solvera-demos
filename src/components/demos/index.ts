@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import Agenda from "./Agenda";
+import Asistente from "./Asistente";
 
 /** Lo que recibe cada demo. Llama narrar("...") en cada acción para actualizar "Qué está pasando". */
 export type DemoProps = { narrar: (texto: string) => void };
@@ -9,5 +10,6 @@ export type DemoProps = { narrar: (texto: string) => void };
  * Para agregar un demo nuevo: crea su archivo en esta carpeta y agrégalo aquí.
  */
 export const DEMOS: Record<string, ComponentType<DemoProps>> = {
+  asistente: Asistente,
   agenda: Agenda,
 };
