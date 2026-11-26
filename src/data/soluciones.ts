@@ -131,22 +131,23 @@ export const SOLUCIONES: Solucion[] = [
     tarjeta: "Actividades, responsables, fechas y comentarios en un solo tablero para tu equipo.",
     precio: "$6,900",
     notaPrecio: "pago único · sin mensualidad",
-    pruebalo: "Mueve una actividad, abre sus comentarios y agrega una nueva.",
-    narracionInicial: "El proyecto va en marcha. Mueve una actividad para ver cómo cambia el avance.",
+    pruebalo: "Cambia el estado de una actividad, dicta una nueva por voz y mira el resumen que le llega a cada perfil.",
+    narracionInicial: "Así arranca la semana: 16 actividades en 6 áreas, cada una con responsable y fecha compromiso. Dirección ve el avance sin pedir reportes.",
     queEs:
-      "Un tablero en línea conectado a una hoja de cálculo tuya. Cada quien actualiza lo suyo desde el celular y la dirección ve el avance sin pedir reportes.",
+      "Un tablero en línea con las actividades de cada área, su responsable y su fecha compromiso. Se cargan a mano, por voz o por WhatsApp, y cada perfil recibe su resumen sin pedirlo.",
     comoFunciona: [
-      "Cargamos tu plan de trabajo: actividades, responsables y fechas.",
-      "Cada persona mueve sus actividades y deja comentarios. Si mencionas a alguien, le llega un correo.",
-      "Tú ves el avance del proyecto y lo que está atrasado, en tiempo real.",
+      "Cargamos tu plan de trabajo por área: actividades, responsables y fechas compromiso.",
+      "Cada persona actualiza lo suyo desde el celular: escribiendo, dictando o mandando un WhatsApp. Si mencionas a alguien, le llega aviso.",
+      "Cada perfil recibe su resumen de pendientes, avances, terminadas y atrasadas. Dirección ve todo.",
     ],
     paraQuien:
       "Equipos que llevan sus pendientes en chats y hojas sueltas, y dueños que quieren ver avances sin perseguir a nadie.",
     incluye: [
-      "Tablero con acceso por usuario",
-      "Comentarios con avisos por correo",
+      "Tablero por área con acceso por usuario",
+      "Alta de actividades a mano, por voz o por WhatsApp",
+      "Resumen automático para cada perfil",
+      "Comentarios con @mención y aviso por correo",
       "Tus datos quedan en tu propia hoja de cálculo",
-      "Se paga una vez",
     ],
     caso: {
       etiqueta: "Caso real:",
