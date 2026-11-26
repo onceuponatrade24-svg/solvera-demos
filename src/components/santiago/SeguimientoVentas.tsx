@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ANIOS,
   armarRegistros,
@@ -47,22 +47,94 @@ function waUrl(tel: string) {
   return `https://wa.me/${d.length === 10 ? "52" + d : d}`;
 }
 
-export function SeguimientoVentas({ hojas, salir }: { hojas: Record<string, string[][]>; salir: () => void }) {
+type Modo = "cargando" | "compartido" | "local";
+
+async function pedir(codigo: string, metodo: "GET" | "POST", cuerpo?: unknown) {
+  const r = await fetch("/api/santiago/llamadas", {
+    method: metodo,
+    headers: { "x-codigo": codigo, ...(cuerpo ? { "Content-Type": "application/json" } : {}) },
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+    cache: "no-store",
+  });
+  const d = await r.json().catch(() => null);
+  return { ok: r.ok && !!d?.ok, status: r.status, datos: d };
+}
+
+export function SeguimientoVentas({
+  hojas,
+  codigo,
+  salir,
+}: {
+  hojas: Record<string, string[][]>;
+  codigo: string;
+  salir: () => void;
+}) {
   const registros = useMemo(() => armarRegistros(hojas), [hojas]);
   const [anio, setAnio] = useState<number>(2026);
   const [busca, setBusca] = useState("");
   const [llamadas, setLlamadas] = useState<Record<string, Llamada>>({});
   const [avisoGuardado, setAvisoGuardado] = useState(true);
+  const [modo, setModo] = useState<Modo>("cargando");
+  const [errorRed, setErrorRed] = useState("");
+  const pendientes = useRef(new Set<string>());
 
-  useEffect(() => setLlamadas(leerLlamadas()), []);
+  // Traer lo compartido; si hay cosas anotadas solo en este dispositivo, subirlas.
+  const sincronizar = useCallback(
+    async (inicial: boolean) => {
+      const local = leerLlamadas();
+      const r = await pedir(codigo, "GET").catch(() => null);
+      if (!r || !r.ok) {
+        if (inicial) {
+          setLlamadas(local);
+          setModo(r?.status === 503 ? "local" : "compartido");
+          if (r && r.status !== 503) setErrorRed("No pude leer lo compartido. Reintentando…");
+          if (!r) setErrorRed("Sin conexión. Reintentando…");
+        }
+        return;
+      }
+      setErrorRed("");
+      const remoto = (r.datos.llamadas ?? {}) as Record<string, Llamada>;
+      if (inicial) {
+        const soloLocal = Object.fromEntries(Object.entries(local).filter(([id]) => !(id in remoto)));
+        if (Object.keys(soloLocal).length) await pedir(codigo, "POST", { cambios: soloLocal }).catch(() => null);
+        const juntas = { ...soloLocal, ...remoto };
+        setLlamadas(juntas);
+        guardarLlamadas(juntas);
+        setModo("compartido");
+        return;
+      }
+      setLlamadas((prev) => {
+        const juntas = { ...prev };
+        for (const [id, v] of Object.entries(remoto)) if (!pendientes.current.has(id)) juntas[id] = v;
+        guardarLlamadas(juntas);
+        return juntas;
+      });
+    },
+    [codigo],
+  );
+
+  useEffect(() => {
+    sincronizar(true);
+    const t = setInterval(() => document.visibilityState === "visible" && sincronizar(false), 30_000);
+    const alVolver = () => document.visibilityState === "visible" && sincronizar(false);
+    document.addEventListener("visibilitychange", alVolver);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", alVolver);
+    };
+  }, [sincronizar]);
 
   const actualizar = (id: string, cambio: Partial<Llamada>) => {
-    setLlamadas((prev) => {
-      const actual: Llamada = prev[id] ?? { fecha: "", estatus: "" };
-      const nuevas = { ...prev, [id]: { ...actual, ...cambio } };
-      setAvisoGuardado(guardarLlamadas(nuevas));
-      return nuevas;
-    });
+    const nueva: Llamada = { ...(llamadas[id] ?? { fecha: "", estatus: "" }), ...cambio };
+    const nuevas = { ...llamadas, [id]: nueva };
+    setLlamadas(nuevas);
+    setAvisoGuardado(guardarLlamadas(nuevas));
+    if (modo === "local") return;
+    pendientes.current.add(id);
+    pedir(codigo, "POST", { cambios: { [id]: nueva } })
+      .then((r) => setErrorRed(r.ok ? "" : "No se guardó en lo compartido. Revisa tu internet."))
+      .catch(() => setErrorRed("Sin conexión: el cambio quedó solo en este dispositivo."))
+      .finally(() => pendientes.current.delete(id));
   };
 
   const porAnio = useMemo(() => {
@@ -126,6 +198,13 @@ export function SeguimientoVentas({ hojas, salir }: { hojas: Record<string, stri
         </div>
         <p className="text-[13px] text-muted">
           <span className="font-bold text-ok">{c.seg}</span> con seguimiento de {c.total}
+        </p>
+        <p className={`text-[12.5px] font-semibold ${modo === "compartido" && !errorRed ? "text-ok" : "text-warn"}`}>
+          {modo === "cargando"
+            ? "Cargando anotaciones…"
+            : modo === "compartido"
+              ? errorRed || "● Guardado compartido: todos ven lo mismo"
+              : "Guardado solo en este dispositivo"}
         </p>
       </div>
 
@@ -248,7 +327,7 @@ export function SeguimientoVentas({ hojas, salir }: { hojas: Record<string, stri
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-[12.5px] text-muted">Los cambios de fecha y estatus se guardan solos en este dispositivo.</p>
+      <p className="mt-3 text-[12.5px] text-muted">Los cambios se guardan solos. Lo que anoten otros aparece al recargar o cada 30 segundos.</p>
     </main>
   );
 }

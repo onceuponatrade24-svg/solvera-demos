@@ -20,6 +20,7 @@ async function abrir(codigo: string): Promise<Datos> {
 
 export function SantiagoApp() {
   const [datos, setDatos] = useState<Datos | null>(null);
+  const [codigoOk, setCodigoOk] = useState("");
   const [estado, setEstado] = useState<"inicio" | "pide" | "abriendo">("inicio");
   const [error, setError] = useState("");
 
@@ -27,7 +28,9 @@ export function SantiagoApp() {
     setEstado("abriendo");
     setError("");
     try {
-      setDatos(await abrir(codigo));
+      const d = await abrir(codigo);
+      setCodigoOk(codigo);
+      setDatos(d);
       try {
         localStorage.setItem(RECUERDA, codigo);
       } catch {}
@@ -57,7 +60,7 @@ export function SantiagoApp() {
     setEstado("pide");
   }, []);
 
-  if (datos) return <SeguimientoVentas hojas={datos.hojas} salir={salir} />;
+  if (datos) return <SeguimientoVentas hojas={datos.hojas} codigo={codigoOk} salir={salir} />;
   if (estado === "inicio") return null;
   return <Entrar error={error} abriendo={estado === "abriendo"} entrar={entrar} />;
 }
