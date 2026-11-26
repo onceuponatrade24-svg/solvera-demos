@@ -364,7 +364,12 @@ export function tocaRecontactar(c: Cliente, hoy: string) {
   if (c.totalPiezas === 0 || c.diasSinComprar === null) return false;
   if (c.diasSinComprar < DIAS_PARA_RECONTACTAR) return false;
   if (c.pendientes.length || c.piezas.some((p) => p.estado === "pendiente" || p.estado === "por-entregar")) return false;
-  if (c.ultimoContacto && diasEntre(c.ultimoContacto, hoy) < DIAS_DESCANSO_TRAS_CONTACTO) return false;
+  if (c.ultimoContacto) {
+    const ultimo = c.seguimiento[0]?.resultado ?? "";
+    // Si ya le vendió, o dijo que no, se le deja descansar más tiempo.
+    const descanso = /vendi/i.test(ultimo) ? DIAS_PARA_RECONTACTAR : /no le interesa/i.test(ultimo) ? 90 : DIAS_DESCANSO_TRAS_CONTACTO;
+    if (diasEntre(c.ultimoContacto, hoy) < descanso) return false;
+  }
   if (c.proximoContacto && c.proximoContacto > hoy) return false;
   return true;
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   claveNombre,
   DIAS_PARA_RECONTACTAR,
@@ -11,7 +10,9 @@ import {
   type Pieza,
   type Tablero,
 } from "@/lib/santiago/datos";
-import { anotarSeguimiento, salir } from "@/app/santiago/acciones";
+import type { Marca } from "@/lib/santiago/marcas";
+
+type Anotar = (m: Omit<Marca, "fecha">) => boolean;
 
 type Vista = "hoy" | "pendientes" | "recontactar" | "todos";
 type Orden = "reciente" | "compras";
@@ -41,17 +42,28 @@ function waUrl(tel: string, nombre: string) {
   return `https://wa.me/${telWhatsApp(tel)}?text=${encodeURIComponent(texto)}`;
 }
 
-const RESULTADOS = ["Le escribí", "Me contestó", "Interesado", "Va a comprar", "No le interesa por ahora", "No contestó"];
+const RESULTADOS = ["Le escribí", "Me contestó", "Interesado", "Ya se vendió", "No le interesa por ahora", "No contestó"];
 
-export function TableroClientes({ tablero, actualizado }: { tablero: Tablero; actualizado: string }) {
+export function TableroClientes({
+  tablero,
+  cargado,
+  marcas,
+  anotar,
+  cargarRespaldo,
+  salir,
+}: {
+  tablero: Tablero;
+  cargado: string;
+  marcas: Marca[];
+  anotar: Anotar;
+  cargarRespaldo: (m: Marca[]) => number;
+  salir: () => void;
+}) {
   const { clientes, hoy, resumen } = tablero;
   const [vista, setVista] = useState<Vista>(resumen.hoyToca ? "hoy" : "pendientes");
   const [busca, setBusca] = useState("");
   const [orden, setOrden] = useState<Orden>("reciente");
   const [abierto, setAbierto] = useState<string | null>(null);
-  const router = useRouter();
-  const [recargando, startRecarga] = useTransition();
-
   const porId = useMemo(() => new Map(clientes.map((c) => [c.id, c])), [clientes]);
 
   const lista = useMemo(() => {
@@ -96,17 +108,12 @@ export function TableroClientes({ tablero, actualizado }: { tablero: Tablero; ac
           <p className="label text-solar">Seguimiento</p>
           <h1 className="text-[26px] font-extrabold leading-tight">Clientes de Santiago</h1>
           <p className="text-[13px] text-muted">
-            Datos en vivo de la hoja · {new Date(actualizado).toLocaleString("es-MX", { timeZone: "America/Mexico_City", dateStyle: "medium", timeStyle: "short" })}
+            Lista cargada el {new Date(cargado).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City", dateStyle: "medium" })} · {marcas.length} anotaciones
           </p>
         </div>
-        <div className="flex flex-none gap-2">
-          <button className="btn !min-h-[38px] !px-3.5 !py-2 text-[13px]" onClick={() => startRecarga(() => router.refresh())} disabled={recargando}>
-            {recargando ? "…" : "Actualizar"}
-          </button>
-          <form action={salir}>
-            <button className="btn !min-h-[38px] !px-3.5 !py-2 text-[13px]">Salir</button>
-          </form>
-        </div>
+        <button className="btn !min-h-[38px] flex-none !px-3.5 !py-2 text-[13px]" onClick={salir}>
+          Salir
+        </button>
       </header>
 
       <section className="mt-4 grid grid-cols-3 gap-2">
@@ -173,7 +180,9 @@ export function TableroClientes({ tablero, actualizado }: { tablero: Tablero; ac
         </>
       )}
 
-      {cliente && <Ficha c={cliente} hoy={hoy} cerrar={() => setAbierto(null)} />}
+      <Respaldo marcas={marcas} cargarRespaldo={cargarRespaldo} />
+
+      {cliente && <Ficha c={cliente} hoy={hoy} anotar={anotar} cerrar={() => setAbierto(null)} />}
     </main>
   );
 }
@@ -299,7 +308,7 @@ function estadoPieza(p: Pieza) {
   }
 }
 
-function Ficha({ c, hoy, cerrar }: { c: Cliente; hoy: string; cerrar: () => void }) {
+function Ficha({ c, hoy, anotar, cerrar }: { c: Cliente; hoy: string; anotar: Anotar; cerrar: () => void }) {
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === "Escape" && cerrar();
     window.addEventListener("keydown", k);
@@ -351,7 +360,7 @@ function Ficha({ c, hoy, cerrar }: { c: Cliente; hoy: string; cerrar: () => void
           </div>
         ))}
 
-        <Anotar c={c} hoy={hoy} />
+        <AnotarSeguimiento c={c} hoy={hoy} anotar={anotar} />
 
         {c.seguimiento.length > 0 && (
           <section className="mt-5">
@@ -400,34 +409,37 @@ function sumarDias(iso: string, dias: number) {
   return d.toISOString().slice(0, 10);
 }
 
-function Anotar({ c, hoy }: { c: Cliente; hoy: string }) {
+function AnotarSeguimiento({ c, hoy, anotar }: { c: Cliente; hoy: string; anotar: Anotar }) {
   const [abierto, setAbierto] = useState(false);
   const [resultado, setResultado] = useState(RESULTADOS[0]);
   const [nota, setNota] = useState("");
   const [proximo, setProximo] = useState(sumarDias(hoy, 7));
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
-  const [guardando, start] = useTransition();
-  const router = useRouter();
+  const vendido = resultado === "Ya se vendió" || resultado === "No le interesa por ahora";
 
   if (!abierto) {
     return (
-      <button className="btn mt-4 w-full" onClick={() => setAbierto(true)}>
-        + Anotar seguimiento
-      </button>
+      <>
+        <button className="btn mt-4 w-full" onClick={() => { setMsg(null); setAbierto(true); }}>
+          + Anotar seguimiento
+        </button>
+        {msg && <p className={`mt-2 text-sm font-semibold ${msg.ok ? "text-ok" : "text-bad"}`}>{msg.texto}</p>}
+      </>
     );
   }
 
-  const guardar = () =>
-    start(async () => {
-      setMsg(null);
-      const r = await anotarSeguimiento({ cliente: c.nombre, celular: c.telefonos[0] ?? "", resultado, nota, proximo });
-      if (r.ok) {
-        setMsg({ ok: true, texto: "Guardado en la hoja." });
-        setNota("");
-        setAbierto(false);
-        router.refresh();
-      } else setMsg({ ok: false, texto: r.error });
+  const guardar = () => {
+    const ok = anotar({
+      cliente: c.nombre,
+      celular: c.telefonos[0] ?? "",
+      resultado,
+      nota: nota.trim().slice(0, 1000),
+      proximo: vendido ? "" : proximo,
     });
+    setMsg(ok ? { ok: true, texto: "Guardado en este celular." } : { ok: false, texto: "No se pudo guardar. ¿Estás en modo incógnito?" });
+    setNota("");
+    setAbierto(false);
+  };
 
   return (
     <div className="mt-4 rounded-2xl border border-line2 p-4">
@@ -451,6 +463,7 @@ function Anotar({ c, hoy }: { c: Cliente; hoy: string }) {
         rows={3}
         className="mt-2 w-full rounded-2xl border border-line2 px-3 py-2 text-base outline-none focus:border-solar"
       />
+      {!vendido && (
       <label className="mt-2 block text-[13px] font-semibold">
         Volver a buscarlo el
         <input
@@ -461,11 +474,12 @@ function Anotar({ c, hoy }: { c: Cliente; hoy: string }) {
           className="ml-2 rounded-xl border border-line2 px-2 py-1.5 text-base"
         />
       </label>
+      )}
       <div className="mt-3 flex gap-2">
-        <button className="btn btn-pri flex-1" onClick={guardar} disabled={guardando}>
-          {guardando ? "Guardando…" : "Guardar"}
+        <button className="btn btn-pri flex-1" onClick={guardar}>
+          Guardar
         </button>
-        <button className="btn" onClick={() => setAbierto(false)} disabled={guardando}>
+        <button className="btn" onClick={() => setAbierto(false)}>
           Cancelar
         </button>
       </div>
@@ -479,5 +493,54 @@ function IconoWa() {
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
       <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.6-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" />
     </svg>
+  );
+}
+
+function Respaldo({ marcas, cargarRespaldo }: { marcas: Marca[]; cargarRespaldo: (m: Marca[]) => number }) {
+  const archivo = useRef<HTMLInputElement>(null);
+  const [msg, setMsg] = useState("");
+
+  const descargar = () => {
+    const blob = new Blob([JSON.stringify(marcas, null, 1)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `seguimiento-santiago-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+
+  const cargar = async (f: File) => {
+    try {
+      const lista = JSON.parse(await f.text());
+      if (!Array.isArray(lista)) throw new Error();
+      const n = cargarRespaldo(lista);
+      setMsg(`Listo: ${n} anotaciones nuevas.`);
+    } catch {
+      setMsg("Ese archivo no es un respaldo válido.");
+    }
+  };
+
+  return (
+    <section className="mt-10 rounded-2xl border border-dashed border-line2 p-4 text-[13px] text-muted">
+      <p>
+        Las anotaciones se guardan en este celular. Descarga un respaldo de vez en cuando, o para pasárselo a Charlie.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button className="btn !min-h-[38px] !py-2 text-[13px]" onClick={descargar} disabled={!marcas.length}>
+          Descargar respaldo
+        </button>
+        <button className="btn !min-h-[38px] !py-2 text-[13px]" onClick={() => archivo.current?.click()}>
+          Cargar respaldo
+        </button>
+        <input
+          ref={archivo}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && cargar(e.target.files[0])}
+        />
+      </div>
+      {msg && <p className="mt-2 font-semibold text-ink">{msg}</p>}
+    </section>
   );
 }
