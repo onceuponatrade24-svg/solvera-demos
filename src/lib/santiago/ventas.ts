@@ -1,17 +1,20 @@
 /*
  * Seguimiento de Ventas: convierte las pestañas de ventas (W y KT) en registros
  * para la tabla de llamadas. Nunca incluye pendientes.
+ * MDT = ventas de vendedores MDT (archivo "Ventas vendedores MDT").
  */
 
 import { PAQUETES } from "@/data/portafolio";
 import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
 
-export type Origen = "W" | "KT";
+export type Origen = "W" | "KT" | "MDT";
 
 export type Registro = {
   id: string;
   origen: Origen;
   anio: number;
+  /** Fecha de contacto (anticipo) en formato AAAA-MM-DD; vacío si no se sabe. */
+  fechaContacto: string;
   numVenta: string;
   medio: string;
   cliente: string;
@@ -22,6 +25,7 @@ export type Registro = {
 const PESTANAS: { nombre: string; origen: Origen }[] = [
   { nombre: "VENTAS EDGAR WE", origen: "W" },
   { nombre: "VENTAS EDGAR KT", origen: "KT" },
+  { nombre: "VENTAS MDT", origen: "MDT" },
 ];
 export const ANIOS = [2025, 2026] as const;
 
@@ -31,6 +35,23 @@ const txt = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
 function anioDe(fecha: string): number | null {
   const m = txt(fecha).match(/\/(\d{4})\b/);
   return m ? +m[1] : null;
+}
+
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+/** "01/ene/2026", "29/04/2026" → "2026-01-01", "2026-04-29". */
+function fechaDe(fecha: string): string {
+  const m = txt(fecha).toLowerCase().match(/^(\d{1,2})\/([a-z]{3}|\d{1,2})\/(\d{4})/);
+  if (!m) return "";
+  const mes = /\d/.test(m[2]) ? +m[2] : MESES.indexOf(m[2]) + 1;
+  if (mes < 1 || mes > 12) return "";
+  return `${m[3]}-${String(mes).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+}
+
+/** "2026-04-29" → "29/04/2026". */
+export function fechaCorta(iso: string): string {
+  const [a, m, d] = iso.split("-");
+  return iso ? `${d}/${m}/${a}` : "";
 }
 
 export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
@@ -52,10 +73,15 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
     };
     const v = (f: string[], i: number) => (i >= 0 ? txt(f[i]) : "");
     let anioAnterior: number | null = null;
+    let fechaAnterior = "";
 
     celdas.slice(iEnc + 1).forEach((f, i) => {
       const anio = anioDe(v(f, c.anticipo)) ?? anioDe(v(f, c.entrega)) ?? anioAnterior;
       if (anio) anioAnterior = anio;
+      let fechaContacto = fechaDe(v(f, c.anticipo)) || fechaDe(v(f, c.entrega));
+      if (fechaContacto && +fechaContacto.slice(0, 4) !== anio) fechaContacto = "";
+      if (fechaContacto) fechaAnterior = fechaContacto;
+      else if (fechaAnterior.startsWith(String(anio))) fechaContacto = fechaAnterior;
       const cliente = v(f, c.cliente);
       // Solo registros con cliente; fuera los pendientes.
       if (!cliente || !anio) return;
@@ -65,6 +91,7 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
         id: `${origen}-${i}-${v(f, c.num)}-${cliente}`.toLowerCase().replace(/\s+/g, "-"),
         origen,
         anio,
+        fechaContacto,
         numVenta: v(f, c.num),
         medio: v(f, c.medio),
         cliente,
@@ -73,7 +100,11 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
       });
     });
   }
-  return salida;
+  // Por año y fecha de contacto (las de igual fecha conservan su orden original).
+  return salida
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => a.r.anio - b.r.anio || (a.r.fechaContacto || "9").localeCompare(b.r.fechaContacto || "9") || a.i - b.i)
+    .map((x) => x.r);
 }
 
 /* ---------- llamadas (se guardan en el navegador) ---------- */

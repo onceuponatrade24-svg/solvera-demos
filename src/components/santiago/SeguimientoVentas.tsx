@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ANIOS,
   armarRegistros,
+  fechaCorta,
   CALENDARIO_EQUIPO,
   NIVELES_WEB,
   precioDe,
@@ -153,7 +154,7 @@ export function SeguimientoVentas({
     const q = sinAcentos(busca.trim());
     const lista = porAnio.get(anio) ?? [];
     if (!q) return lista;
-    return lista.filter((r) => sinAcentos(`${r.cliente} ${r.ciudad} ${r.celular} ${r.medio} ${r.numVenta}`).includes(q));
+    return lista.filter((r) => sinAcentos(`${r.cliente} ${r.ciudad} ${r.celular} ${r.medio} ${r.numVenta} ${r.origen}`).includes(q));
   }, [porAnio, anio, busca]);
 
   // Numeración corrida del 1 en adelante dentro de cada año.
@@ -177,7 +178,7 @@ export function SeguimientoVentas({
           <p className="label text-solar">Privado</p>
           <h1 className="text-[26px] font-extrabold leading-tight">Clientes Comercializadora TRD</h1>
           <p className="text-[13px] text-muted">
-            Registros de las hojas W y KT. Sin pendientes.
+            Registros de las hojas W, KT y MDT, por fecha de contacto. Sin pendientes.
           </p>
         </div>
         <button className="btn !min-h-[38px] flex-none !px-3.5 !py-2 text-[13px]" onClick={salir}>
@@ -229,10 +230,11 @@ export function SeguimientoVentas({
       )}
 
       <div className="mt-3 overflow-x-auto rounded-2xl border border-line bg-white">
-        <table className="w-full min-w-[1820px] border-collapse text-left text-[14px]">
+        <table className="w-full min-w-[1950px] border-collapse text-left text-[14px]">
           <thead>
             <tr className="border-b border-line bg-[#faf8f5] text-[12px] uppercase tracking-[0.08em] text-muted">
               <th className="px-3 py-3 font-bold">No.</th>
+              <th className="px-3 py-3 font-bold">Fecha de contacto</th>
               <th className="px-3 py-3 font-bold">Medio</th>
               <th className="px-3 py-3 font-bold">Cliente</th>
               <th className="px-3 py-3 font-bold">Celular</th>
@@ -255,6 +257,7 @@ export function SeguimientoVentas({
                     <span className="font-semibold">{numero.get(r.id)}</span>{" "}
                     <span className="ml-1 rounded-full bg-[#f2f2f2] px-1.5 py-0.5 text-[10.5px] font-bold text-muted">{r.origen}</span>
                   </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-muted">{fechaCorta(r.fechaContacto) || "—"}</td>
                   <td className="px-3 py-2.5 text-muted">{r.medio}</td>
                   <td className="px-3 py-2.5 font-semibold">{r.cliente}</td>
                   <td className="whitespace-nowrap px-3 py-2.5">
@@ -328,7 +331,7 @@ export function SeguimientoVentas({
             })}
             {filas.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-muted">
+                <td colSpan={13} className="px-3 py-8 text-center text-muted">
                   No hay registros.
                 </td>
               </tr>
