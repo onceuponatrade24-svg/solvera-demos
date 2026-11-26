@@ -77,7 +77,7 @@ function Entrar({ error, abriendo, entrar }: { error: string; abriendo: boolean;
         className="rounded-3xl border border-line bg-white p-7 shadow-[0_30px_60px_-40px_rgba(26,26,26,.35)]"
       >
         <p className="label text-solar">Privado</p>
-        <h1 className="mt-1 text-2xl font-extrabold">Seguimiento de Ventas</h1>
+        <h1 className="mt-1 text-2xl font-extrabold">Clientes Comercializadora TRD</h1>
         <p className="mt-1 text-[14.5px] text-muted">Escribe tu código para entrar.</p>
         <label className="mt-5 block text-sm font-semibold" htmlFor="codigo">
           Código

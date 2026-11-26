@@ -22,7 +22,7 @@ function calendarioUrl(r: Registro, l: Llamada) {
   if (r.ciudad) detalles.push(`Ciudad: ${r.ciudad}`);
   if (l.producto) detalles.push(`Producto ofrecido: ${l.producto}`);
   if (l.comentario) detalles.push(`Comentarios: ${l.comentario}`);
-  detalles.push("", "Agendada desde Seguimiento de Ventas.");
+  detalles.push("", "Agendada desde Clientes Comercializadora TRD.");
   const q = new URLSearchParams({
     action: "TEMPLATE",
     text: `Videollamada · ${r.cliente}${l.producto ? ` · ${l.producto}` : ""}`,
@@ -170,7 +170,7 @@ export function SeguimientoVentas({
       <header className="flex items-start justify-between gap-3">
         <div>
           <p className="label text-solar">Privado</p>
-          <h1 className="text-[26px] font-extrabold leading-tight">Seguimiento de Ventas</h1>
+          <h1 className="text-[26px] font-extrabold leading-tight">Clientes Comercializadora TRD</h1>
           <p className="text-[13px] text-muted">
             Registros de las hojas W y KT. Sin pendientes.
           </p>
