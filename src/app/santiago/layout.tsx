@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Clientes · Santiago",
-  description: "Seguimiento de clientes (privado).",
+  title: "Seguimiento de Ventas",
+  description: "Seguimiento de ventas (privado).",
   robots: { index: false, follow: false, nocache: true },
   openGraph: null,
 };
