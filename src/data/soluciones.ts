@@ -202,8 +202,8 @@ export const SOLUCIONES: Solucion[] = [
     precio: "A la medida",
     // PENDIENTE con Charlie: ¿se quita la mención de consultoría aquí también?
     notaPrecio: "se cotiza después de una consultoría integral, desde $14,900",
-    pruebalo: "Recibe un arribo, surte un pedido, cambia de puesto y pregúntale al asistente.",
-    narracionInicial: "Entraste como Dirección. Ves toda la operación en una pantalla.",
+    pruebalo: "Cambia de perfil: cuenta un pasillo como Almacén, apruébalo como Supervisor, arma una cotización en Ventas y mira cómo cambia todo en Dirección. Pregúntale al asistente.",
+    narracionInicial: "Entraste como Dirección de Ruta Norte 4x4, una distribuidora ficticia. Ves objetivos, arribos, pagos, ventas y al equipo trabajando, en una pantalla.",
     queEs:
       "Tu propia aplicación, con un módulo por área y un usuario por persona. Todo está conectado: lo que recibe almacén actualiza el inventario, y lo que vende ventas lo descuenta.",
     comoFunciona: [
@@ -221,7 +221,7 @@ export const SOLUCIONES: Solucion[] = [
     ],
     caso: {
       etiqueta: "Caso real:",
-      texto: "sistema desarrollado para Gorilla Crown. El demo usa una distribuidora ficticia.",
+      texto: "este demo es una copia de la app de operaciones que usa Gorilla Crown, con una distribuidora ficticia.",
     },
     whatsapp: "Hola, vi el demo del sistema operativo de empresa de Solvera Labs y quiero una consultoría",
     video: null,
