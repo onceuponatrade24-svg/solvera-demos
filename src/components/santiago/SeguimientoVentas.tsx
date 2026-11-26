@@ -5,6 +5,9 @@ import {
   ANIOS,
   armarRegistros,
   CALENDARIO_EQUIPO,
+  NIVELES_WEB,
+  precioDe,
+  PRODUCTO_WEB,
   PRODUCTOS,
   guardarLlamadas,
   leerLlamadas,
@@ -20,7 +23,9 @@ function calendarioUrl(r: Registro, l: Llamada) {
   const detalles = [`Cliente: ${r.cliente}`];
   if (r.celular) detalles.push(`Celular: ${r.celular}`);
   if (r.ciudad) detalles.push(`Ciudad: ${r.ciudad}`);
-  if (l.producto) detalles.push(`Producto ofrecido: ${l.producto}`);
+  if (l.producto) detalles.push(`Producto ofrecido: ${l.producto}${l.nivelWeb ? ` (${l.nivelWeb})` : ""}`);
+  const p = precioDe(l.producto, l.nivelWeb);
+  if (p) detalles.push(`Precio: ${p.precio}${p.nota ? ` (${p.nota})` : ""}`);
   if (l.comentario) detalles.push(`Comentarios: ${l.comentario}`);
   detalles.push("", "Agendada desde Clientes Comercializadora TRD.");
   const q = new URLSearchParams({
@@ -224,7 +229,7 @@ export function SeguimientoVentas({
       )}
 
       <div className="mt-3 overflow-x-auto rounded-2xl border border-line bg-white">
-        <table className="w-full min-w-[1620px] border-collapse text-left text-[14px]">
+        <table className="w-full min-w-[1820px] border-collapse text-left text-[14px]">
           <thead>
             <tr className="border-b border-line bg-[#faf8f5] text-[12px] uppercase tracking-[0.08em] text-muted">
               <th className="px-3 py-3 font-bold">No.</th>
@@ -235,6 +240,7 @@ export function SeguimientoVentas({
               <th className="px-3 py-3 font-bold">Fecha de llamada</th>
               <th className="px-3 py-3 font-bold">Estatus de llamada</th>
               <th className="px-3 py-3 font-bold">Producto ofrecido</th>
+              <th className="px-3 py-3 font-bold">Precio</th>
               <th className="px-3 py-3 font-bold">Videollamada (fecha y hora)</th>
               <th className="px-3 py-3 font-bold">Comentarios</th>
               <th className="px-3 py-3 font-bold">Calendario</th>
@@ -289,6 +295,9 @@ export function SeguimientoVentas({
                     </select>
                   </td>
                   <td className="px-3 py-1.5">
+                    <Precio l={l} elegirNivel={(nivelWeb) => actualizar(r.id, { nivelWeb })} cliente={r.cliente} />
+                  </td>
+                  <td className="px-3 py-1.5">
                     <input
                       type="datetime-local"
                       value={l.videollamada ?? ""}
@@ -319,7 +328,7 @@ export function SeguimientoVentas({
             })}
             {filas.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-3 py-8 text-center text-muted">
+                <td colSpan={12} className="px-3 py-8 text-center text-muted">
                   No hay registros.
                 </td>
               </tr>
@@ -381,5 +390,36 @@ function Comentario({ valor, guardar, cliente }: { valor: string; guardar: (v: s
       aria-label={`Comentarios sobre ${cliente}`}
       className="w-[240px] rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-[14px] outline-none placeholder:text-line2 hover:border-line2 focus:border-solar"
     />
+  );
+}
+
+function Precio({ l, elegirNivel, cliente }: { l: Llamada; elegirNivel: (n: string) => void; cliente: string }) {
+  const p = precioDe(l.producto, l.nivelWeb);
+  return (
+    <div className="w-[190px]">
+      {l.producto === PRODUCTO_WEB && (
+        <select
+          value={l.nivelWeb ?? ""}
+          onChange={(e) => elegirNivel(e.target.value)}
+          aria-label={`Nivel de página web para ${cliente}`}
+          className={`mb-0.5 w-full rounded-lg border border-line2 bg-transparent px-1.5 py-1 text-[13px] outline-none focus:border-solar ${l.nivelWeb ? "" : "text-muted"}`}
+        >
+          <option value="">Elegir nivel…</option>
+          {NIVELES_WEB.map((n) => (
+            <option key={n.nombre} value={n.nombre}>
+              {n.nombre} · {n.precio}
+            </option>
+          ))}
+        </select>
+      )}
+      {p ? (
+        <p className="leading-tight">
+          <span className="font-bold">{p.precio}</span>
+          {p.nota && <span className="block text-[11.5px] text-muted">{p.nota}</span>}
+        </p>
+      ) : (
+        l.producto !== PRODUCTO_WEB && <span className="text-muted">—</span>
+      )}
+    </div>
   );
 }

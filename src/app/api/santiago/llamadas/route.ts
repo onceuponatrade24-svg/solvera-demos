@@ -45,6 +45,7 @@ export async function POST(req: Request) {
       producto: limpiar(l.producto, 80),
       comentario: limpiar(l.comentario, 500),
       videollamada: limpiar(l.videollamada, 16),
+      nivelWeb: limpiar(l.nivelWeb, 60),
       cambio: new Date().toISOString(),
     };
   }

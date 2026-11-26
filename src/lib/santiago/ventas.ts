@@ -3,6 +3,7 @@
  * para la tabla de llamadas. Nunca incluye pendientes.
  */
 
+import { PAQUETES } from "@/data/portafolio";
 import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
 
 export type Origen = "W" | "KT";
@@ -78,10 +79,31 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
 /* ---------- llamadas (se guardan en el navegador) ---------- */
 
 export type Estatus = "" | "seguimiento" | "no-seguimiento";
-export type Llamada = { fecha: string; estatus: Estatus; producto?: string; comentario?: string; videollamada?: string };
+export type Llamada = { fecha: string; estatus: Estatus; producto?: string; nivelWeb?: string; comentario?: string; videollamada?: string };
 
 /** Soluciones de Solvera que se le pueden ofrecer al cliente (mismas que en el dashboard). */
 export const PRODUCTOS: string[] = [PAGINAS_WEB.nombre, ...SOLUCIONES.map((s) => s.nombre), "Otro"];
+export const PRODUCTO_WEB = PAGINAS_WEB.nombre;
+
+/** Niveles de página web (salen de src/data/portafolio.ts). */
+export const NIVELES_WEB = PAQUETES.map((p) => ({ nombre: p.nombre, precio: p.precio, nota: p.notaPrecio }));
+
+/**
+ * Precio que se llena solo según el producto. Sale de src/data/soluciones.ts:
+ * para cambiar un precio, se cambia ahí y se actualiza aquí y en el dashboard.
+ */
+export function precioDe(producto?: string, nivelWeb?: string): { precio: string; nota: string } | null {
+  if (!producto) return null;
+  if (producto === PRODUCTO_WEB) {
+    const n = NIVELES_WEB.find((x) => x.nombre === nivelWeb);
+    return n ? { precio: n.precio, nota: n.nota } : null;
+  }
+  const s = SOLUCIONES.find((x) => x.nombre === producto);
+  if (!s) return null;
+  // La nota trae extras ("listo en 2 a 3 días"); se queda con la parte del cobro.
+  const nota = s.notaPrecio.split(" · ").filter((t) => /\$|pago|mensualidad|implementación|desde/i.test(t)).join(" · ");
+  return { precio: s.precio, nota };
+}
 
 /**
  * Calendario compartido del equipo: si se pone un correo aquí, se agrega como invitado
