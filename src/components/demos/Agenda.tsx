@@ -1,380 +1,488 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DemoProps } from "./index";
+import { BUSINESS_THEMES, HORAS_AGENDA, SOLVERA_WA, type NegocioAgenda } from "@/data/agenda";
 
 /*
- * Demo simulado de la Agenda automática de citas.
- * Tres negocios ficticios. Cada uno con sus colores, servicios y horarios.
- * No usa base de datos: todo vive en memoria y arranca con citas ya apartadas.
+ * Demo de la Agenda automática de citas.
+ * Tres negocios ficticios con su foto, colores y servicios.
+ * Al confirmar, el servidor manda el pase real al correo y al WhatsApp de quien prueba
+ * (si las llaves ya están puestas en Vercel; si no, lo dice con honestidad).
  */
 
-type Servicio = { id: string; nombre: string; min: number; precio: number };
-type Negocio = {
-  id: string;
-  etiqueta: string;
-  nombre: string;
-  liga: string;
-  direccion: string;
-  color: string;
-  colorSuave: string;
-  servicios: Servicio[];
-  horas: string[];
-  /** Citas que ya existen, para que el demo nunca arranque vacío */
-  otros: string[];
-  semilla: number;
-  quien: string;
-};
+type Dia = { iso: string; etiqueta: string };
+type Resultado = { folio: string; emailSent: boolean; whatsappSent: boolean };
 
-const NEGOCIOS: Negocio[] = [
-  {
-    id: "carwash",
-    etiqueta: "Car wash",
-    nombre: "Autolavado Brillo Express",
-    liga: "citas.brilloexpress.mx",
-    direccion: "Av. Patria 1450, Zapopan",
-    color: "#0a5cc2",
-    colorSuave: "#e8f1fd",
-    servicios: [
-      { id: "ext", nombre: "Lavado exterior", min: 30, precio: 150 },
-      { id: "comp", nombre: "Lavado completo", min: 60, precio: 280 },
-      { id: "det", nombre: "Detallado interior", min: 120, precio: 950 },
-    ],
-    horas: ["09:00", "10:00", "11:00", "12:00", "13:00", "15:00", "16:00", "17:00"],
-    otros: ["Lavado completo · Nissan Versa", "Lavado exterior · Mazda 3", "Detallado · Honda CR-V", "Lavado completo · Jeep Compass"],
-    semilla: 2,
-    quien: "el autolavado",
-  },
-  {
-    id: "estetica",
-    etiqueta: "Estética",
-    nombre: "Estética Lúa",
-    liga: "citas.esteticalua.mx",
-    direccion: "Calle Lerdo de Tejada 2210, Guadalajara",
-    color: "#a8326e",
-    colorSuave: "#fbeaf3",
-    servicios: [
-      { id: "corte", nombre: "Corte de cabello", min: 60, precio: 280 },
-      { id: "tinte", nombre: "Tinte completo", min: 120, precio: 950 },
-      { id: "mani", nombre: "Manicure", min: 60, precio: 320 },
-    ],
-    horas: ["10:00", "11:00", "12:00", "13:00", "16:00", "17:00", "18:00", "19:00"],
-    otros: ["Corte · Daniela R.", "Manicure · Sofía M.", "Tinte · Paola G.", "Corte · Andrea L."],
-    semilla: 1,
-    quien: "la estética",
-  },
-  {
-    id: "dental",
-    etiqueta: "Dentista",
-    nombre: "Clínica Dental Primavera",
-    liga: "citas.dentalprimavera.mx",
-    direccion: "Av. Hidalgo 1820, Guadalajara",
-    color: "#0e8577",
-    colorSuave: "#e3f5f2",
-    servicios: [
-      { id: "val", nombre: "Valoración", min: 30, precio: 350 },
-      { id: "limp", nombre: "Limpieza dental", min: 60, precio: 650 },
-      { id: "blanq", nombre: "Blanqueamiento", min: 60, precio: 1900 },
-    ],
-    horas: ["10:00", "11:00", "12:00", "13:00", "16:00", "17:00", "18:00"],
-    otros: ["Limpieza · Sra. Robles", "Valoración · J. Mendoza", "Ortodoncia · A. Lara", "Limpieza · C. Ibarra"],
-    semilla: 0,
-    quien: "el consultorio",
-  },
-];
+const DIAS_CORTOS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-type Cita = { negocio: string; servicio: string; dia: number; hora: string; nombre: string };
-
-/** "de el autolavado" → "del autolavado" */
-const de = (quien: string) => (quien.startsWith("el ") ? "del " + quien.slice(3) : "de " + quien);
-
-const mxn = (n: number) => "$" + n.toLocaleString("es-MX");
-const fecha = (d: Date) => d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" });
-
-/** Próximos 5 días abiertos (lunes a sábado). */
-function proximosDias() {
-  const out: Date[] = [];
+/** Próximos 5 días hábiles, empezando mañana. */
+function proximosDias(): Dia[] {
+  const dias: Dia[] = [];
   const d = new Date();
-  while (out.length < 5) {
+  while (dias.length < 5) {
     d.setDate(d.getDate() + 1);
-    if (d.getDay() !== 0) out.push(new Date(d));
+    const sem = d.getDay();
+    if (sem === 0 || sem === 6) continue;
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    dias.push({ iso, etiqueta: `${DIAS_CORTOS[sem]} ${d.getDate()} de ${MESES[d.getMonth()]}` });
   }
-  return out;
+  return dias;
 }
 
-/** Cuántos bloques de hora ocupa un servicio. */
-const bloques = (min: number) => Math.max(1, Math.ceil(min / 60));
+/** Dos horarios ocupados por día, siempre los mismos para el mismo negocio y día. */
+function ocupadas(negocio: number, dia: number) {
+  const a = (negocio * 3 + dia * 2 + 2) % HORAS_AGENDA.length;
+  let b = (negocio + dia * 5 + 5) % HORAS_AGENDA.length;
+  if (b === a) b = (b + 3) % HORAS_AGENDA.length;
+  return new Set([HORAS_AGENDA[a], HORAS_AGENDA[b]]);
+}
 
 export default function Agenda({ narrar }: DemoProps) {
-  const [dias, setDias] = useState<Date[]>([]);
-  const [negId, setNegId] = useState("dental");
-  const [svc, setSvc] = useState<string | null>(null);
-  const [dia, setDia] = useState<number | null>(null);
-  const [hora, setHora] = useState<string | null>(null);
-  const [nombre, setNombre] = useState("");
-  const [mias, setMias] = useState<Cita[]>([]);
-  const [confirmada, setConfirmada] = useState<Cita | null>(null);
+  const [idx, setIdx] = useState(0);
+  const n: NegocioAgenda = BUSINESS_THEMES[idx];
 
-  // Las fechas se calculan en el navegador para que siempre sean "a partir de mañana".
+  const [dias, setDias] = useState<Dia[]>([]);
   useEffect(() => setDias(proximosDias()), []);
 
-  const neg = NEGOCIOS.find((n) => n.id === negId)!;
-  const servicio = neg.servicios.find((s) => s.id === svc) ?? null;
+  const [servicio, setServicio] = useState<string | null>(null);
+  const [extra, setExtra] = useState(n.extra.opciones[0]);
+  const [dia, setDia] = useState(0);
+  const [hora, setHora] = useState<string | null>(null);
+  const [apartadas, setApartadas] = useState<Record<string, true>>({});
 
-  /** ¿La hora ya está apartada? Mezcla citas de ejemplo con las que apartó el cliente. */
-  const ocupadaBase = (di: number, h: string) => {
-    const i = neg.horas.indexOf(h);
-    return (di * 3 + i * 2 + neg.semilla) % 5 === 0 || (di + i + neg.semilla) % 7 === 0;
-  };
-  const deCliente = (di: number, h: string) =>
-    mias.find((m) => m.negocio === negId && m.dia === di && m.hora === h);
-  const ocupada = (di: number, h: string) => ocupadaBase(di, h) || !!deCliente(di, h);
+  const [nombre, setNombre] = useState("");
+  const [tel, setTel] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [trampa, setTrampa] = useState(""); // campo oculto anti-bots
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [verDueno, setVerDueno] = useState(false);
 
-  /** Libre si cabe el servicio completo sin encimarse con otra cita ni salirse del turno. */
-  const libre = (di: number, h: string) => {
-    if (!servicio) return false;
-    const i = neg.horas.indexOf(h);
-    for (let k = 0; k < bloques(servicio.min); k++) {
-      const hk = neg.horas[i + k];
-      if (!hk || ocupada(di, hk)) return false;
-      if (k > 0 && parseInt(hk) - parseInt(neg.horas[i + k - 1]) !== 1) return false;
-    }
-    return true;
-  };
+  const serv = n.servicios.find((s) => s.id === servicio) ?? null;
+  const ocupadasHoy = useMemo(() => ocupadas(idx, dia), [idx, dia]);
+  const estaOcupada = (h: string) => ocupadasHoy.has(h) || !!apartadas[`${n.id}|${dia}|${h}`];
 
-  function cambiarNegocio(id: string) {
-    const n = NEGOCIOS.find((x) => x.id === id)!;
-    setNegId(id);
-    setSvc(null);
-    setDia(null);
+  const telLimpio = tel.replace(/\D/g, "");
+  const telOk = telLimpio.length === 10;
+  const correoOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo.trim());
+  const nombreOk = nombre.trim().length >= 2;
+  const listo = !!serv && !!hora && dias.length > 0 && nombreOk && telOk && correoOk;
+
+  function cambiarNegocio(i: number) {
+    if (i === idx) return;
+    const nuevo = BUSINESS_THEMES[i];
+    setIdx(i);
+    setServicio(null);
     setHora(null);
-    setConfirmada(null);
-    narrar(`Mismo sistema, otro negocio: ${n.nombre} tiene sus propios servicios, horarios y colores.`);
+    setDia(0);
+    setExtra(nuevo.extra.opciones[0]);
+    setResultado(null);
+    setError(null);
+    setVerDueno(false);
+    narrar(`Mismo sistema, otro negocio: ${nuevo.nombre} tiene su propia liga, colores, servicios y horarios.`);
   }
 
   function elegirServicio(id: string) {
-    setSvc(id);
-    setHora(null);
-    const s = neg.servicios.find((x) => x.id === id)!;
-    narrar(
-      bloques(s.min) > 1
-        ? `${s.nombre} dura ${s.min / 60} horas. El sistema solo ofrece horarios donde cabe completo, sin encimar citas.`
-        : "Cada servicio tiene su duración. El sistema la usa para no encimar citas."
-    );
+    const s = n.servicios.find((x) => x.id === id)!;
+    setServicio(id);
+    narrar(`${s.nombre}: ${s.duracion}, ${s.precio}. El sistema ya sabe cuánto tiempo apartar en la agenda ${n.de}.`);
   }
 
   function elegirDia(i: number) {
     setDia(i);
     setHora(null);
-    narrar(`Los horarios tachados ya están ocupados en la agenda ${de(neg.quien)}. El cliente no puede tomarlos.`);
+    narrar(`Los horarios tachados ya están ocupados en la agenda ${n.de}. Nadie puede tomarlos dos veces.`);
   }
 
   function elegirHora(h: string) {
     setHora(h);
-    narrar("Horario elegido. Solo falta el nombre para confirmar.");
+    narrar("Horario apartado mientras confirmas. Solo faltan tus datos para mandarte el pase.");
   }
 
-  function confirmar(e: React.FormEvent) {
-    e.preventDefault();
-    if (!servicio || dia === null || !hora) return;
-    const cita: Cita = { negocio: negId, servicio: servicio.id, dia, hora, nombre: nombre.trim() || "Cliente" };
-    // Una cita larga ocupa varias horas en la agenda.
-    const i = neg.horas.indexOf(hora);
-    const extras: Cita[] = [];
-    for (let k = 1; k < bloques(servicio.min); k++) extras.push({ ...cita, hora: neg.horas[i + k] });
-    setMias((m) => [...m, cita, ...extras]);
-    setConfirmada(cita);
-    narrar(
-      `La cita quedó en la agenda ${de(neg.quien)}, el cliente recibió su confirmación por WhatsApp y el recordatorio ya está programado. Nadie contestó un solo mensaje.`
-    );
+  async function confirmar() {
+    if (!listo || !serv || !hora || enviando) return;
+    setEnviando(true);
+    setError(null);
+    narrar("Enviando: el sistema guarda la cita, genera el folio y manda los avisos.");
+    try {
+      const r = await fetch("/api/demos/agenda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessId: n.id,
+          serviceId: serv.id,
+          extraOption: extra,
+          dayISO: dias[dia].iso,
+          day: dias[dia].etiqueta,
+          time: hora,
+          customerName: nombre.trim(),
+          customerPhone: telLimpio,
+          customerEmail: correo.trim(),
+          website: trampa,
+        }),
+      });
+      const datos = await r.json().catch(() => ({}));
+      if (!r.ok || !datos.success) throw new Error(datos.error || "No se pudo confirmar la cita.");
+      setApartadas((a) => ({ ...a, [`${n.id}|${dia}|${hora}`]: true }));
+      setResultado({ folio: datos.folio, emailSent: !!datos.emailSent, whatsappSent: !!datos.whatsappSent });
+      const llego =
+        datos.emailSent && datos.whatsappSent
+          ? "Revisa tu correo y tu WhatsApp: el pase ya va en camino."
+          : datos.emailSent
+            ? "Revisa tu correo: el pase ya va en camino."
+            : datos.whatsappSent
+              ? "Revisa tu WhatsApp: la confirmación ya va en camino."
+              : "La cita quedó registrada con su folio.";
+      narrar(`Cita confirmada con folio #${datos.folio}. ${llego} Al negocio le llega su aviso al mismo tiempo.`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo confirmar la cita.";
+      setError(msg);
+      narrar("Algo falló al enviar. Revisa tus datos e inténtalo otra vez.");
+    } finally {
+      setEnviando(false);
+    }
   }
 
-  function otraCita() {
-    setConfirmada(null);
-    setSvc(null);
-    setDia(null);
+  function otraPrueba() {
+    setResultado(null);
+    setServicio(null);
     setHora(null);
+    setVerDueno(false);
     narrar("Nueva cita. El horario que apartaste antes ya aparece ocupado.");
   }
 
-  const estiloNegocio = { "--biz": neg.color, "--biz-soft": neg.colorSuave } as React.CSSProperties;
-  const opt =
-    "grid gap-0.5 rounded-2xl border border-line2 bg-white px-3.5 py-3 text-left text-[0.88rem] transition-colors enabled:hover:border-[var(--biz)] aria-pressed:border-[var(--biz)] aria-pressed:bg-[var(--biz-soft)] aria-pressed:shadow-[inset_0_0_0_1px_var(--biz)] disabled:cursor-not-allowed disabled:opacity-35";
-  const paso = "mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted";
+  const waPrueba = resultado
+    ? `https://wa.me/${SOLVERA_WA}?text=${encodeURIComponent(
+        `Hola, aparté una cita de prueba en ${n.nombre} con folio #${resultado.folio} y quiero probar reagendarla.`,
+      )}`
+    : "#";
 
   return (
-    <div className="grid gap-4" style={estiloNegocio}>
-      {/* Selector de negocio */}
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Negocio de ejemplo">
-        {NEGOCIOS.map((n) => (
+    <div
+      className="grid grid-cols-[minmax(0,1fr)] gap-4 overflow-clip rounded-3xl border p-3 transition-colors duration-300 sm:p-5"
+      style={{ background: n.colorSuave, borderColor: `${n.color}33` }}
+    >
+      {/* Selector de giro */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Elige un negocio">
+        {BUSINESS_THEMES.map((b, i) => (
           <button
-            key={n.id}
+            key={b.id}
             type="button"
-            onClick={() => cambiarNegocio(n.id)}
-            aria-pressed={n.id === negId}
-            className="rounded-full border border-line2 bg-white px-3.5 py-[7px] text-[13px] font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white"
+            aria-pressed={i === idx}
+            onClick={() => cambiarNegocio(i)}
+            className="rounded-full border px-4 py-2 text-sm font-bold transition-all duration-300"
+            style={
+              i === idx
+                ? { background: n.color, borderColor: n.color, color: "#fff" }
+                : { background: "#fff", borderColor: "#e5e5e5", color: "#1a1a1a" }
+            }
           >
-            {n.etiqueta}
+            {b.pestana}
           </button>
         ))}
       </div>
 
-      {/* Encabezado del negocio */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl px-4 py-3" style={{ background: neg.colorSuave }}>
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-full text-sm font-black text-white" style={{ background: neg.color }}>
-            {neg.nombre[0]}
-          </span>
-          <b style={{ color: neg.color }}>{neg.nombre}</b>
+      {/* Banner */}
+      <div className="relative h-36 overflow-hidden rounded-2xl bg-neutral-800">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img key={n.id} src={n.foto} alt="" onError={(e) => (e.currentTarget.style.display = "none")} className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+        <div className="absolute inset-x-3 bottom-3 flex flex-wrap items-end justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg font-black text-white ring-2 ring-white/70"
+              style={{ background: n.color }}
+              aria-hidden
+            >
+              {n.nombre[0]}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-lg font-bold leading-tight text-white">{n.nombre}</p>
+              <p className="truncate text-xs text-white/80">{n.direccion}</p>
+            </div>
+          </div>
+          <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs text-white backdrop-blur-md">{n.subdominio}</span>
         </div>
-        <span className="text-[0.8rem] font-semibold tabular-nums text-muted">{neg.liga}</span>
       </div>
 
-      {confirmada ? (
-        <Confirmacion neg={neg} cita={confirmada} dias={dias} ocupadaBase={ocupadaBase} mias={mias} onOtra={otraCita} />
+      {resultado && serv && hora ? (
+        <Comprobante
+          n={n}
+          folio={resultado.folio}
+          servicio={serv.nombre}
+          duracion={serv.duracion}
+          precio={serv.precio}
+          dia={dias[dia]?.etiqueta ?? ""}
+          hora={hora}
+          extra={extra}
+          nombre={nombre.trim()}
+          correo={correo.trim()}
+          tel={telLimpio}
+          emailSent={resultado.emailSent}
+          whatsappSent={resultado.whatsappSent}
+          waPrueba={waPrueba}
+          verDueno={verDueno}
+          alternarDueno={() => {
+            setVerDueno((v) => !v);
+            if (!verDueno) narrar(`Así le llega el aviso al dueño ${n.de}: la cita nueva ya está en su calendario, sin que nadie la capture.`);
+          }}
+          otra={otraPrueba}
+        />
       ) : (
-        <div className="grid gap-[18px]">
-          <div>
-            <div className={paso}>1 · Servicio</div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(125px,1fr))] gap-2">
-              {neg.servicios.map((s) => (
-                <button key={s.id} type="button" className={opt} aria-pressed={svc === s.id} onClick={() => elegirServicio(s.id)}>
-                  <b className="font-bold">{s.nombre}</b>
-                  <small className="text-muted">
-                    {s.min >= 60 ? `${s.min / 60} h` : `${s.min} min`} · {mxn(s.precio)}
-                  </small>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className={paso}>2 · Día</div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-2">
-              {dias.map((d, i) => (
-                <button key={i} type="button" className={opt} aria-pressed={dia === i} disabled={!svc} onClick={() => elegirDia(i)}>
-                  <b className="font-bold">{fecha(d)}</b>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className={paso}>3 · Hora</div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(78px,1fr))] gap-2">
-              {neg.horas.map((h) => {
-                const tachada = dia !== null && ocupada(dia, h);
-                const disponible = dia !== null && libre(dia, h);
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5 rounded-2xl bg-white/70 p-3 sm:p-4">
+          {/* 1. Servicio */}
+          <section>
+            <p className="mb-2 text-xs font-extrabold tracking-wider" style={{ color: n.colorTexto }}>1. SERVICIO</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {n.servicios.map((s) => {
+                const activo = s.id === servicio;
                 return (
                   <button
-                    key={h}
+                    key={s.id}
                     type="button"
-                    className={`${opt} rounded-full text-center font-bold tabular-nums ${tachada ? "line-through" : ""}`}
-                    aria-pressed={hora === h}
-                    disabled={!disponible}
-                    onClick={() => elegirHora(h)}
+                    aria-pressed={activo}
+                    onClick={() => elegirServicio(s.id)}
+                    className="rounded-xl bg-white p-3 text-left transition-all duration-200"
+                    style={{ border: activo ? `2px solid ${n.color}` : "2px solid #ececec", boxShadow: activo ? `0 6px 18px ${n.color}22` : undefined }}
                   >
-                    {h}
+                    <span className="block text-sm font-bold text-ink">{s.nombre}</span>
+                    <span className="mt-1 block text-xs text-muted">
+                      {s.duracion} · {s.precio}
+                    </span>
                   </button>
                 );
               })}
             </div>
-          </div>
+            <label className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-bold text-ink">{n.extra.etiqueta}:</span>
+              <select
+                value={extra}
+                onChange={(e) => {
+                  setExtra(e.target.value);
+                  narrar(`${n.extra.etiqueta}: ${e.target.value}. Cada giro pide el dato que le sirve, y queda en la cita.`);
+                }}
+                className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+              >
+                {n.extra.opciones.map((o) => (
+                  <option key={o}>{o}</option>
+                ))}
+              </select>
+            </label>
+          </section>
 
-          <form onSubmit={confirmar} className="flex flex-wrap items-center gap-2">
+          {/* 2. Día */}
+          <section>
+            <p className="mb-2 text-xs font-extrabold tracking-wider" style={{ color: n.colorTexto }}>2. DÍA</p>
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+              {dias.map((d, i) => {
+                const [sem, ...resto] = d.etiqueta.split(" ");
+                const activo = i === dia;
+                return (
+                  <button
+                    key={d.iso}
+                    type="button"
+                    aria-pressed={activo}
+                    aria-label={d.etiqueta}
+                    onClick={() => elegirDia(i)}
+                    className="rounded-xl bg-white px-1 py-2 text-center text-xs leading-tight transition-all duration-200 sm:text-sm"
+                    style={{ border: activo ? `2px solid ${n.color}` : "2px solid #ececec", color: activo ? n.colorTexto : "#1a1a1a" }}
+                  >
+                    <span className="block font-bold">{sem} {resto[0]}</span>
+                    <span className="block text-muted">{resto.slice(1).join(" ")}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* 3. Hora */}
+          <section>
+            <p className="mb-2 text-xs font-extrabold tracking-wider" style={{ color: n.colorTexto }}>3. HORA</p>
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+              {HORAS_AGENDA.map((h) => {
+                const ocup = estaOcupada(h);
+                const activo = h === hora;
+                return (
+                  <button
+                    key={h}
+                    type="button"
+                    disabled={ocup}
+                    aria-pressed={activo}
+                    aria-label={ocup ? `${h} ocupado` : h}
+                    onClick={() => elegirHora(h)}
+                    className={
+                      ocup
+                        ? "cursor-not-allowed rounded-full border border-transparent bg-gray-100 py-2 text-sm text-gray-400 line-through"
+                        : "rounded-full border bg-white py-2 text-sm font-semibold transition-all duration-200"
+                    }
+                    style={ocup ? undefined : activo ? { background: n.color, borderColor: n.color, color: "#fff" } : { borderColor: "#e5e5e5" }}
+                  >
+                    {ocup ? "Ocupado" : h}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* 4. Datos */}
+          <section>
+            <p className="mb-2 text-xs font-extrabold tracking-wider" style={{ color: n.colorTexto }}>4. TUS DATOS PARA CONFIRMACIÓN REAL</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Campo etiqueta="Tu nombre" error={nombre && !nombreOk ? "Escribe tu nombre" : null}>
+                <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Carlos Mendoza" autoComplete="name" className="w-full bg-transparent px-3 py-2.5 text-sm outline-none" />
+              </Campo>
+              <Campo etiqueta="Tu WhatsApp (10 dígitos)" error={tel && !telOk ? "Deben ser 10 números" : null}>
+                <span className="pl-3 text-sm text-muted">+52</span>
+                <input
+                  value={tel}
+                  onChange={(e) => setTel(e.target.value.replace(/[^\d\s]/g, "").slice(0, 14))}
+                  placeholder="33 1234 5678"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  className="w-full min-w-0 bg-transparent px-2 py-2.5 text-sm outline-none"
+                />
+              </Campo>
+              <Campo etiqueta="Tu correo electrónico" error={correo && !correoOk ? "Revisa tu correo" : null}>
+                <input value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Ej. carlos@empresa.com" type="email" autoComplete="email" className="w-full bg-transparent px-3 py-2.5 text-sm outline-none" />
+              </Campo>
+            </div>
+            {/* Campo trampa para bots: las personas no lo ven */}
             <input
-              className="h-11 min-w-0 flex-[1_1_180px] rounded-full border border-line2 bg-white px-[18px] text-base"
-              placeholder="Tu nombre"
-              aria-label="Tu nombre"
+              value={trampa}
+              onChange={(e) => setTrampa(e.target.value)}
+              tabIndex={-1}
               autoComplete="off"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              aria-hidden
+              className="absolute -left-[9999px] h-0 w-0 opacity-0"
+              name="website"
             />
+          </section>
+
+          {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-bad">{error}</p>}
+
+          <div>
             <button
-              type="submit"
-              disabled={!hora}
-              className="inline-flex min-h-[44px] flex-auto items-center justify-center rounded-full px-5 text-[14.5px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-              style={{ background: neg.color }}
+              type="button"
+              onClick={confirmar}
+              disabled={!listo || enviando}
+              className="w-full rounded-full py-3.5 text-base font-bold text-white transition-all duration-300 disabled:opacity-45"
+              style={{ background: n.color }}
             >
-              Confirmar cita{hora ? ` · ${hora}` : ""}
+              {enviando ? "Enviando confirmación..." : "Confirmar cita"}
             </button>
-          </form>
+            {!listo && !enviando && (
+              <p className="mt-2 text-center text-xs text-muted">
+                {!serv ? "Elige un servicio" : !hora ? "Elige una hora" : "Llena tus datos"} para confirmar.
+              </p>
+            )}
+            <p className="mt-2 text-center text-xs font-semibold text-ink">
+              Prueba real: recibirás tu pase de cita en tu WhatsApp y correo en segundos.
+            </p>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function Confirmacion({
-  neg,
-  cita,
-  dias,
-  ocupadaBase,
-  mias,
-  onOtra,
-}: {
-  neg: Negocio;
-  cita: Cita;
-  dias: Date[];
-  ocupadaBase: (di: number, h: string) => boolean;
-  mias: Cita[];
-  onOtra: () => void;
-}) {
-  const s = neg.servicios.find((x) => x.id === cita.servicio)!;
-  const dia = dias[cita.dia];
-  const filas = neg.horas
-    .map((h, i) => {
-      const mia = mias.find((m) => m.negocio === neg.id && m.dia === cita.dia && m.hora === h);
-      if (mia) {
-        const sm = neg.servicios.find((x) => x.id === mia.servicio)!;
-        const nueva = mia.hora === cita.hora && mia.nombre === cita.nombre && mia.servicio === cita.servicio;
-        return { h, texto: `${sm.nombre} · ${mia.nombre}`, mia: true, nueva };
-      }
-      if (ocupadaBase(cita.dia, h)) return { h, texto: neg.otros[i % neg.otros.length], mia: false, nueva: false };
-      return null;
-    })
-    .filter(Boolean) as { h: string; texto: string; mia: boolean; nueva: boolean }[];
-
+function Campo({ etiqueta, error, children }: { etiqueta: string; error: string | null; children: React.ReactNode }) {
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[#e6f6ed] px-[11px] py-1 text-[11.5px] font-bold text-ok">Cita confirmada</span>
-        <b>
-          {s.nombre} · {fecha(dia)} · {cita.hora}
-        </b>
-      </div>
+    <label className="block min-w-0">
+      <span className="mb-1 block text-xs font-bold text-ink">{etiqueta}</span>
+      <span className={`flex items-center rounded-xl border bg-white ${error ? "border-bad" : "border-line"}`}>{children}</span>
+      {error && <span className="mt-1 block text-xs text-bad">{error}</span>}
+    </label>
+  );
+}
 
-      <div>
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">WhatsApp que recibe el cliente</div>
-        <div className="w-fit max-w-full rounded-[14px] rounded-br-[3px] bg-[#d9fdd3] px-3.5 py-2.5 text-[0.88rem] text-[#10321a]">
-          Hola {cita.nombre}, tu cita de {s.nombre} quedó para el {fecha(dia)} a las {cita.hora} en {neg.nombre}, {neg.direccion}. Te
-          recordamos un día antes. Para cambiarla, responde a este mensaje.
+function Comprobante(p: {
+  n: NegocioAgenda;
+  folio: string;
+  servicio: string;
+  duracion: string;
+  precio: string;
+  dia: string;
+  hora: string;
+  extra: string;
+  nombre: string;
+  correo: string;
+  tel: string;
+  emailSent: boolean;
+  whatsappSent: boolean;
+  waPrueba: string;
+  verDueno: boolean;
+  alternarDueno: () => void;
+  otra: () => void;
+}) {
+  const { n } = p;
+  const telBonito = `${p.tel.slice(0, 2)} ${p.tel.slice(2, 6)} ${p.tel.slice(6)}`;
+  const filas: [string, string][] = [
+    ["Negocio", n.nombre],
+    ["Servicio", `${p.servicio} · ${p.duracion} · ${p.precio}`],
+    ["Día", p.dia],
+    ["Hora", p.hora],
+    [n.extra.etiqueta, p.extra],
+  ];
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-2xl bg-white p-4 sm:p-5">
+      <div className="flex items-center gap-3">
+        <span className="grid h-12 w-12 shrink-0 animate-[pop_.4s_ease-out] place-items-center rounded-full text-2xl text-white" style={{ background: n.color }} aria-hidden>
+          ✓
+        </span>
+        <div>
+          <p className="text-xl font-black text-ink">¡Cita confirmada!</p>
+          <p className="text-sm font-bold" style={{ color: n.colorTexto }}>Folio #{p.folio}</p>
         </div>
       </div>
 
-      <div>
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
-          Agenda {de(neg.quien)} · {fecha(dia)}
-        </div>
-        <div className="overflow-hidden rounded-2xl border border-line">
-          {filas.map((f) => (
-            <div
-              key={f.h}
-              className="flex gap-3 border-b border-line px-3.5 py-2.5 text-[0.88rem] last:border-b-0"
-              style={f.mia ? { background: neg.colorSuave, fontWeight: 600 } : undefined}
-            >
-              <b className="min-w-[52px] font-bold tabular-nums">{f.h}</b>
-              <span className="min-w-0">
-                {f.texto}
-                {f.nueva ? " (nueva)" : ""}
-              </span>
+      <dl className="grid gap-1.5 rounded-xl p-3 text-sm" style={{ background: n.colorSuave }}>
+        {filas.map(([k, v]) => (
+          <div key={k} className="flex flex-wrap justify-between gap-x-3">
+            <dt className="text-muted">{k}</dt>
+            <dd className="font-semibold text-ink">{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="flex flex-wrap gap-2 text-xs font-semibold">
+        <span className={`rounded-full px-3 py-1.5 ${p.emailSent ? "bg-green-50 text-ok" : "bg-amber-50 text-warn"}`}>
+          {p.emailSent ? `✉️ Pase enviado a ${p.correo}` : "✉️ El envío por correo se está activando"}
+        </span>
+        <span className={`rounded-full px-3 py-1.5 ${p.whatsappSent ? "bg-green-50 text-ok" : "bg-amber-50 text-warn"}`}>
+          {p.whatsappSent ? `💬 Confirmación enviada a +52 ${telBonito}` : "💬 El envío por WhatsApp se está activando"}
+        </span>
+      </div>
+
+      <a href={p.waPrueba} target="_blank" rel="noopener noreferrer" className="rounded-full py-3 text-center text-sm font-bold text-white" style={{ background: "#16a34a" }}>
+        Probar conversación en mi WhatsApp
+      </a>
+
+      <div className="rounded-xl border border-line">
+        <button type="button" onClick={p.alternarDueno} aria-expanded={p.verDueno} className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-bold text-ink">
+          Ver aviso que recibe el dueño del negocio
+          <span aria-hidden>{p.verDueno ? "−" : "+"}</span>
+        </button>
+        {p.verDueno && (
+          <div className="border-t border-line bg-neutral-50 p-3">
+            <div className="max-w-sm rounded-2xl rounded-tl-sm bg-white p-3 text-sm shadow-sm">
+              <p className="text-xs font-bold" style={{ color: n.colorTexto }}>📅 Nueva cita · {n.nombre}</p>
+              <p className="mt-1 text-ink">
+                <b>{p.nombre}</b> apartó <b>{p.servicio}</b> el <b>{p.dia}</b> a las <b>{p.hora}</b>.
+              </p>
+              <p className="mt-1 text-muted">
+                {n.extra.etiqueta}: {p.extra} · Folio #{p.folio}
+              </p>
+              <p className="mt-1 text-muted">Ya está en tu calendario. Recordatorio al cliente: un día antes.</p>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      <button type="button" className="btn w-fit" onClick={onOtra}>
-        Apartar otra cita
+      <button type="button" onClick={p.otra} className="rounded-full border border-line py-2.5 text-sm font-bold text-ink">
+        Hacer otra prueba
       </button>
     </div>
   );

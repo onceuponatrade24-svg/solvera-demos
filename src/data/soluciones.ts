@@ -100,7 +100,7 @@ export const SOLUCIONES: Solucion[] = [
     tarjeta: "El cliente elige servicio, día y hora. Confirmación y recordatorio salen solos.",
     precio: "$5,900",
     notaPrecio: "pago único · $690 al mes",
-    pruebalo: "Elige un negocio y aparta una cita: servicio, día y hora, y confirma.",
+    pruebalo: "Elige un negocio, aparta una cita con tus datos y recibe la confirmación real en tu correo y WhatsApp.",
     narracionInicial: "El cliente abre tu liga de citas. Solo ve los horarios que tienes libres.",
     queEs:
       "Una liga de citas con tus servicios y tus horarios reales. Cada cita cae directo en tu calendario y el cliente recibe sus avisos por WhatsApp.",
@@ -117,7 +117,7 @@ export const SOLUCIONES: Solucion[] = [
       "Citas directo en tu calendario",
       "Menos huecos y menos clientes que no llegan",
     ],
-    caso: { etiqueta: "Ejemplos del demo:", texto: "un car wash, una estética y un consultorio dental ficticios." },
+    caso: { etiqueta: "Ejemplos del demo:", texto: "un car wash, una estética y una clínica dental ficticios." },
     whatsapp: "Hola, vi el demo de agenda automática de Solvera Labs y quiero informes",
     video: null,
     demoReal: null,
