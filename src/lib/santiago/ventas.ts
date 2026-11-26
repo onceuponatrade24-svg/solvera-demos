@@ -76,7 +76,28 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
 /* ---------- llamadas (se guardan en el navegador) ---------- */
 
 export type Estatus = "" | "seguimiento" | "no-seguimiento";
-export type Llamada = { fecha: string; estatus: Estatus };
+export type Llamada = { fecha: string; estatus: Estatus; producto?: string; comentario?: string };
+
+/** Productos que Santiago puede marcar como ofrecidos. */
+export const PRODUCTOS = [
+  "Rolex",
+  "Cartier",
+  "Audemars Piguet",
+  "Patek Philippe",
+  "Omega",
+  "Hublot",
+  "Panerai",
+  "Richard Mille",
+  "Bvlgari",
+  "Vacheron Constantin",
+  "Otro",
+] as const;
+
+/**
+ * Calendario compartido del equipo: si se pone un correo aquí, se agrega como invitado
+ * a cada videollamada que agende Santiago. Vacío = solo en el calendario de quien agenda.
+ */
+export const CALENDARIO_EQUIPO = "";
 
 const LLAVE = "santiago-llamadas-v1";
 
