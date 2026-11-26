@@ -30,6 +30,15 @@ function calendarioUrl(r: Registro, l: Llamada) {
     location: "Google Meet",
   });
   if (CALENDARIO_EQUIPO) q.set("add", CALENDARIO_EQUIPO);
+  // Si ya tiene fecha y hora, la cita sale con ese horario (1 hora, hora de la Ciudad de México).
+  const m = (l.videollamada ?? "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (m) {
+    const inicio = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]));
+    const fin = new Date(inicio.getTime() + 60 * 60 * 1000);
+    const f = (d: Date) => d.toISOString().slice(0, 16).replace(/[-:]/g, "") + "00";
+    q.set("dates", `${f(inicio)}/${f(fin)}`);
+    q.set("ctz", "America/Mexico_City");
+  }
   return `https://calendar.google.com/calendar/render?${q.toString()}`;
 }
 
@@ -136,7 +145,7 @@ export function SeguimientoVentas({ hojas, salir }: { hojas: Record<string, stri
       )}
 
       <div className="mt-3 overflow-x-auto rounded-2xl border border-line bg-white">
-        <table className="w-full min-w-[1320px] border-collapse text-left text-[14px]">
+        <table className="w-full min-w-[1540px] border-collapse text-left text-[14px]">
           <thead>
             <tr className="border-b border-line bg-[#faf8f5] text-[12px] uppercase tracking-[0.08em] text-muted">
               <th className="px-3 py-3 font-bold">No.</th>
@@ -147,8 +156,9 @@ export function SeguimientoVentas({ hojas, salir }: { hojas: Record<string, stri
               <th className="px-3 py-3 font-bold">Fecha de llamada</th>
               <th className="px-3 py-3 font-bold">Estatus de llamada</th>
               <th className="px-3 py-3 font-bold">Producto ofrecido</th>
+              <th className="px-3 py-3 font-bold">Videollamada (fecha y hora)</th>
               <th className="px-3 py-3 font-bold">Comentarios</th>
-              <th className="px-3 py-3 font-bold">Videollamada</th>
+              <th className="px-3 py-3 font-bold">Calendario</th>
             </tr>
           </thead>
           <tbody>
@@ -200,6 +210,15 @@ export function SeguimientoVentas({ hojas, salir }: { hojas: Record<string, stri
                     </select>
                   </td>
                   <td className="px-3 py-1.5">
+                    <input
+                      type="datetime-local"
+                      value={l.videollamada ?? ""}
+                      onChange={(e) => actualizar(r.id, { videollamada: e.target.value })}
+                      aria-label={`Fecha y hora de la videollamada con ${r.cliente}`}
+                      className="w-[200px] rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-[14px] outline-none hover:border-line2 focus:border-solar"
+                    />
+                  </td>
+                  <td className="px-3 py-1.5">
                     <Comentario
                       valor={l.comentario ?? ""}
                       guardar={(comentario) => actualizar(r.id, { comentario })}
@@ -221,7 +240,7 @@ export function SeguimientoVentas({ hojas, salir }: { hojas: Record<string, stri
             })}
             {filas.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-8 text-center text-muted">
+                <td colSpan={11} className="px-3 py-8 text-center text-muted">
                   No hay registros.
                 </td>
               </tr>

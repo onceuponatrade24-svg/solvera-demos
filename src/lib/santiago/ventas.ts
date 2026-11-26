@@ -76,7 +76,7 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
 /* ---------- llamadas (se guardan en el navegador) ---------- */
 
 export type Estatus = "" | "seguimiento" | "no-seguimiento";
-export type Llamada = { fecha: string; estatus: Estatus; producto?: string; comentario?: string };
+export type Llamada = { fecha: string; estatus: Estatus; producto?: string; comentario?: string; videollamada?: string };
 
 /** Productos que Santiago puede marcar como ofrecidos. */
 export const PRODUCTOS = [
