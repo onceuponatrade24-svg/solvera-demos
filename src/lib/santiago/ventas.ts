@@ -3,6 +3,8 @@
  * para la tabla de llamadas. Nunca incluye pendientes.
  */
 
+import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
+
 export type Origen = "W" | "KT";
 
 export type Registro = {
@@ -78,20 +80,8 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
 export type Estatus = "" | "seguimiento" | "no-seguimiento";
 export type Llamada = { fecha: string; estatus: Estatus; producto?: string; comentario?: string; videollamada?: string };
 
-/** Productos que Santiago puede marcar como ofrecidos. */
-export const PRODUCTOS = [
-  "Rolex",
-  "Cartier",
-  "Audemars Piguet",
-  "Patek Philippe",
-  "Omega",
-  "Hublot",
-  "Panerai",
-  "Richard Mille",
-  "Bvlgari",
-  "Vacheron Constantin",
-  "Otro",
-] as const;
+/** Soluciones de Solvera que se le pueden ofrecer al cliente (mismas que en el dashboard). */
+export const PRODUCTOS: string[] = [PAGINAS_WEB.nombre, ...SOLUCIONES.map((s) => s.nombre), "Otro"];
 
 /**
  * Calendario compartido del equipo: si se pone un correo aquí, se agrega como invitado

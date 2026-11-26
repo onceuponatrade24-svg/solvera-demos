@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     limpio[id] = {
       fecha: limpiar(l.fecha, 10),
       estatus: ["seguimiento", "no-seguimiento"].includes(String(l.estatus)) ? l.estatus : "",
-      producto: limpiar(l.producto, 60),
+      producto: limpiar(l.producto, 80),
       comentario: limpiar(l.comentario, 500),
       videollamada: limpiar(l.videollamada, 16),
       cambio: new Date().toISOString(),

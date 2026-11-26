@@ -224,7 +224,7 @@ export function SeguimientoVentas({
       )}
 
       <div className="mt-3 overflow-x-auto rounded-2xl border border-line bg-white">
-        <table className="w-full min-w-[1540px] border-collapse text-left text-[14px]">
+        <table className="w-full min-w-[1620px] border-collapse text-left text-[14px]">
           <thead>
             <tr className="border-b border-line bg-[#faf8f5] text-[12px] uppercase tracking-[0.08em] text-muted">
               <th className="px-3 py-3 font-bold">No.</th>
@@ -278,7 +278,7 @@ export function SeguimientoVentas({
                       value={l.producto ?? ""}
                       onChange={(e) => actualizar(r.id, { producto: e.target.value })}
                       aria-label={`Producto ofrecido a ${r.cliente}`}
-                      className={`w-[160px] rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-[14px] outline-none hover:border-line2 focus:border-solar ${l.producto ? "" : "text-muted"}`}
+                      className={`w-[240px] rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-[14px] outline-none hover:border-line2 focus:border-solar ${l.producto ? "" : "text-muted"}`}
                     >
                       <option value="">Elegir…</option>
                       {PRODUCTOS.map((p) => (
