@@ -97,7 +97,7 @@ export const PRODUCTOS = [
  * Calendario compartido del equipo: si se pone un correo aquí, se agrega como invitado
  * a cada videollamada que agende Santiago. Vacío = solo en el calendario de quien agenda.
  */
-export const CALENDARIO_EQUIPO = "";
+export const CALENDARIO_EQUIPO = "solveralabs.ai@gmail.com";
 
 const LLAVE = "santiago-llamadas-v1";
 
