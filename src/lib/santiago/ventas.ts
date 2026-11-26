@@ -93,7 +93,7 @@ export const NIVELES_WEB = PAQUETES.map((p) => ({ nombre: p.nombre, precio: p.pr
  * para cambiar un precio, se cambia ahí y se actualiza aquí y en el dashboard.
  */
 export function precioDe(producto?: string, nivelWeb?: string): { precio: string; nota: string } | null {
-  if (!producto) return null;
+  if (!producto || !PRODUCTOS.includes(producto)) return null;
   if (producto === PRODUCTO_WEB) {
     const n = NIVELES_WEB.find((x) => x.nombre === nivelWeb);
     return n ? { precio: n.precio, nota: n.nota } : null;

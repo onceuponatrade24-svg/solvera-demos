@@ -23,14 +23,14 @@ function calendarioUrl(r: Registro, l: Llamada) {
   const detalles = [`Cliente: ${r.cliente}`];
   if (r.celular) detalles.push(`Celular: ${r.celular}`);
   if (r.ciudad) detalles.push(`Ciudad: ${r.ciudad}`);
-  if (l.producto) detalles.push(`Producto ofrecido: ${l.producto}${l.nivelWeb ? ` (${l.nivelWeb})` : ""}`);
+  if (l.producto && PRODUCTOS.includes(l.producto)) detalles.push(`Producto ofrecido: ${l.producto}${l.nivelWeb ? ` (${l.nivelWeb})` : ""}`);
   const p = precioDe(l.producto, l.nivelWeb);
   if (p) detalles.push(`Precio: ${p.precio}${p.nota ? ` (${p.nota})` : ""}`);
   if (l.comentario) detalles.push(`Comentarios: ${l.comentario}`);
   detalles.push("", "Agendada desde Clientes Comercializadora TRD.");
   const q = new URLSearchParams({
     action: "TEMPLATE",
-    text: `Videollamada · ${r.cliente}${l.producto ? ` · ${l.producto}` : ""}`,
+    text: `Videollamada · ${r.cliente}${l.producto && PRODUCTOS.includes(l.producto) ? ` · ${l.producto}` : ""}`,
     details: detalles.join("\n"),
     location: "Google Meet",
   });
@@ -281,7 +281,7 @@ export function SeguimientoVentas({
                   </td>
                   <td className="px-3 py-1.5">
                     <select
-                      value={l.producto ?? ""}
+                      value={l.producto && PRODUCTOS.includes(l.producto) ? l.producto : ""}
                       onChange={(e) => actualizar(r.id, { producto: e.target.value })}
                       aria-label={`Producto ofrecido a ${r.cliente}`}
                       className={`w-[240px] rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-[14px] outline-none hover:border-line2 focus:border-solar ${l.producto ? "" : "text-muted"}`}
