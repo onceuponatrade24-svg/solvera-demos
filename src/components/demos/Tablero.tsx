@@ -6,7 +6,7 @@ import type { DemoProps } from "./index";
 /*
  * Demo simulado del Organizador de proyectos.
  * Empresa ficticia con actividades por área, responsables y fechas compromiso.
- * Las actividades se dan de alta a mano, por voz o por WhatsApp,
+ * Las actividades se dan de alta a mano, por voz o pegando una lista,
  * y cada perfil recibe su resumen. Todo vive en memoria.
  */
 
@@ -47,7 +47,7 @@ type Actividad = {
   /** Días desde hoy. Negativo = ya pasó. */
   dias: number;
   comentarios: Comentario[];
-  origen?: "Manual" | "Voz" | "WhatsApp";
+  origen?: "Manual" | "Voz" | "Lista";
 };
 
 /** Arranque realista: avance a medias, algunas atrasadas, comentarios. */
@@ -85,7 +85,7 @@ function fechaDe(hoy: Date, dias: number) {
 }
 const corta = (d: Date) => d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" });
 
-/* ---------- Lectura de lo que se dicta o se manda por WhatsApp ---------- */
+/* ---------- Lectura de lo que se dicta o se escribe ---------- */
 function interpretar(textoOriginal: string, hoy: Date) {
   let t = " " + textoOriginal.trim().replace(/[.!]+$/, "") + " ";
   const bajo = t.toLowerCase();
@@ -132,7 +132,7 @@ function interpretar(textoOriginal: string, hoy: Date) {
 }
 
 const EJEMPLO_VOZ = "Laura tiene que publicar la promoción de fin de mes para el jueves";
-const EJEMPLO_WA = "Agrega: Jorge recibir pedido de tornillería pasado mañana";
+const EJEMPLO_LISTA = "Jorge recibir pedido de tornillería pasado mañana\nRaúl revisar respaldo del servidor el viernes\nAna llamar a Hotelera del Bajío mañana";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Reconocedor = any;
@@ -203,7 +203,7 @@ export default function Tablero({ narrar }: DemoProps) {
     setFiltroPersona("todas");
     setFiltroEstado("todos");
     const cuando = hoy ? corta(fechaDe(hoy, datos.dias)) : "";
-    const como = origen === "Voz" ? "Se dictó por voz y" : origen === "WhatsApp" ? "Llegó por WhatsApp y" : "Se capturó y";
+    const como = origen === "Voz" ? "Se dictó por voz y" : origen === "Lista" ? "Se pegó de una lista y" : "Se capturó y";
     narrar(`${como} quedó como ${id} para ${datos.persona}, compromiso ${cuando}. Ya aparece en su resumen.`);
     return id;
   }
@@ -287,7 +287,7 @@ export default function Tablero({ narrar }: DemoProps) {
           type="button"
           onClick={() => {
             setAlta((v) => !v);
-            if (!alta) narrar("Una actividad nueva se puede capturar a mano, dictar por voz o mandar por WhatsApp.");
+            if (!alta) narrar("Una actividad nueva se puede dictar por voz, capturar a mano o pegar en lista, todo dentro del mismo tablero.");
           }}
           className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-white"
           style={{ background: AZUL }}
@@ -429,7 +429,7 @@ function Fila({
           {corta(fechaDe(hoy, a.dias))}
         </span>
         {a.origen && a.origen !== "Manual" && (
-          <span className="rounded-full bg-[#eef1ff] px-2 py-0.5 text-[0.7rem] font-bold text-[#3b5bdb]">Llegó por {a.origen.toLowerCase()}</span>
+          <span className="rounded-full bg-[#eef1ff] px-2 py-0.5 text-[0.7rem] font-bold text-[#3b5bdb]">{a.origen === "Voz" ? "Dictada por voz" : "Pegada de lista"}</span>
         )}
         <span className="ml-auto flex items-center gap-2">
           <span className="h-1.5 w-14 overflow-hidden rounded-full bg-[#e9ecef]">
@@ -489,7 +489,7 @@ function Fila({
   );
 }
 
-/* ---------- Alta de actividades: a mano, por voz o por WhatsApp ---------- */
+/* ---------- Alta de actividades: a mano, por voz o pegando una lista ---------- */
 function Alta({
   hoy, onAgregar, narrar,
 }: {
@@ -497,27 +497,27 @@ function Alta({
   onAgregar: (d: { titulo: string; persona: string; area: string; dias: number }, origen: Actividad["origen"]) => string;
   narrar: (t: string) => void;
 }) {
-  const [modo, setModo] = useState<"Manual" | "Voz" | "WhatsApp">("Voz");
+  const [modo, setModo] = useState<"Manual" | "Voz" | "Lista">("Voz");
   return (
     <div className="grid gap-3 rounded-2xl border border-[#d5dcff] bg-[#f7f8ff] p-3.5">
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Cómo agregar">
-        {(["Voz", "WhatsApp", "Manual"] as const).map((m) => (
+        {(["Voz", "Manual", "Lista"] as const).map((m) => (
           <button
             key={m}
             type="button"
             aria-pressed={modo === m}
             onClick={() => {
               setModo(m);
-              narrar(m === "Voz" ? "Dicta la actividad como la dirías en voz alta. El sistema saca el responsable y la fecha." : m === "WhatsApp" ? "Manda un mensaje al número del sistema y la actividad se da de alta sola." : "Captura tradicional: título, área, responsable y fecha compromiso.");
+              narrar(m === "Voz" ? "Dicta la actividad como la dirías en voz alta. El sistema saca el responsable y la fecha." : m === "Lista" ? "Pega varias actividades, una por renglón, por ejemplo la minuta de una junta. Cada una se acomoda sola." : "Captura tradicional: título, área, responsable y fecha compromiso.");
             }}
             className="rounded-full border border-line2 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-muted aria-pressed:border-[#3b5bdb] aria-pressed:bg-[#3b5bdb] aria-pressed:text-white"
           >
-            {m === "Voz" ? "🎙 Por voz" : m === "WhatsApp" ? "💬 Por WhatsApp" : "✏️ A mano"}
+            {m === "Voz" ? "🎙 Por voz" : m === "Lista" ? "📋 Pegar lista" : "✏️ A mano"}
           </button>
         ))}
       </div>
       {modo === "Voz" && <PorVoz hoy={hoy} onAgregar={onAgregar} narrar={narrar} />}
-      {modo === "WhatsApp" && <PorWhatsApp hoy={hoy} onAgregar={onAgregar} />}
+      {modo === "Lista" && <PorLista hoy={hoy} onAgregar={onAgregar} narrar={narrar} />}
       {modo === "Manual" && <AMano onAgregar={onAgregar} />}
     </div>
   );
@@ -628,44 +628,41 @@ function PorVoz({ hoy, onAgregar, narrar }: { hoy: Date; onAgregar: (d: any, o: 
   );
 }
 
-function PorWhatsApp({ hoy, onAgregar }: { hoy: Date; onAgregar: (d: any, o: Actividad["origen"]) => string }) {
-  const [texto, setTexto] = useState(EJEMPLO_WA);
-  const [chat, setChat] = useState<{ de: "yo" | "bot"; t: string }[]>([]);
-  function enviar(e: React.FormEvent) {
-    e.preventDefault();
-    const d = interpretar(texto, hoy);
-    if (!d.titulo) return;
-    const id = onAgregar(d, "WhatsApp");
-    setChat((c) => [
-      ...c,
-      { de: "yo", t: texto },
-      { de: "bot", t: `Listo ✅ Agregué ${id} para ${d.persona}: “${d.titulo}”. Compromiso ${corta(fechaDe(hoy, d.dias))}.` },
-    ]);
-    setTexto("");
-  }
+function PorLista({ hoy, onAgregar, narrar }: { hoy: Date; onAgregar: (d: any, o: Actividad["origen"]) => string; narrar: (t: string) => void }) {
+  const [texto, setTexto] = useState(EJEMPLO_LISTA);
+  const lineas = texto.split("\n").map((l) => l.trim()).filter(Boolean);
   return (
-    <div className="grid gap-2 rounded-xl bg-[#efeae2] p-2.5">
-      <div className="text-[0.75rem] font-semibold text-muted">Chat con el número del sistema</div>
-      {chat.map((m, i) => (
-        <div
-          key={i}
-          className={`max-w-[88%] rounded-[12px] px-3 py-2 text-[0.82rem] ${m.de === "yo" ? "justify-self-end bg-[#d9fdd3]" : "justify-self-start bg-white"}`}
-        >
-          {m.t}
+    <div className="grid gap-2.5">
+      <textarea
+        className="min-h-[96px] rounded-xl border border-line2 bg-white p-3 text-base"
+        aria-label="Lista de actividades"
+        placeholder="Una actividad por renglón. Ej. Ana llamar a Lerma mañana"
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+      />
+      {lineas.length > 0 && (
+        <div className="grid gap-1.5">
+          {lineas.map((l, i) => (
+            <Vista key={i} hoy={hoy} texto={l} />
+          ))}
         </div>
-      ))}
-      <form onSubmit={enviar} className="flex gap-2">
-        <input
-          className="h-10 min-w-0 flex-1 rounded-full border border-line2 bg-white px-3.5 text-base"
-          aria-label="Mensaje de WhatsApp"
-          placeholder="Ej. Agrega: Ana llamar a Lerma mañana"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-        />
-        <button type="submit" className="rounded-full bg-[#128c7e] px-4 text-[13px] font-semibold text-white">
-          Enviar
-        </button>
-      </form>
+      )}
+      <button
+        type="button"
+        disabled={lineas.length === 0}
+        onClick={() => {
+          lineas.forEach((l) => {
+            const d = interpretar(l, hoy);
+            if (d.titulo) onAgregar(d, "Lista");
+          });
+          setTexto("");
+          narrar(`Se dieron de alta ${lineas.length} actividades de un jalón, cada una con su responsable y fecha. Sirve para pegar la minuta de una junta.`);
+        }}
+        className="h-10 w-fit rounded-full px-4 text-[13px] font-semibold text-white disabled:opacity-40"
+        style={{ background: AZUL }}
+      >
+        Agregar {lineas.length || ""} actividades
+      </button>
     </div>
   );
 }
@@ -751,7 +748,7 @@ function Resumen({ acts, hoy, perfil, onPerfil }: { acts: Actividad[]; hoy: Date
 
       <div className="grid gap-3 rounded-xl border border-line bg-white p-4 text-[0.82rem]">
         <div className="grid gap-0.5 border-b border-line pb-2.5 text-[0.75rem] text-muted">
-          <span><b className="text-ink">Para:</b> {p.completo} · correo y WhatsApp</span>
+          <span><b className="text-ink">Para:</b> {p.completo} · por correo y en su inicio del tablero</span>
           <span><b className="text-ink">Cuándo:</b> cada lunes a las 8:00 (próximo: {lunes})</span>
           <span className="text-[0.88rem] font-bold text-ink">
             {esDireccion ? `Resumen semanal de ${EMPRESA}` : `${p.nombre}, estos son tus pendientes de la semana`}
