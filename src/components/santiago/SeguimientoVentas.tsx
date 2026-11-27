@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
 import {
   ANIOS,
   armarRegistros,
@@ -202,8 +201,6 @@ export function SeguimientoVentas({
           Salir
         </button>
       </header>
-
-      <DemosSolvera />
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-full border border-line2 bg-white p-1" role="tablist" aria-label="Año">
@@ -432,52 +429,6 @@ function SelectorEstatus({ valor, cambiar, cliente }: { valor: Estatus; cambiar:
         );
       })}
     </div>
-  );
-}
-
-const SITIO = "https://solvera-demos.vercel.app";
-const DEMOS = [
-  { nombre: "Todos los demos", ruta: "" },
-  { nombre: PAGINAS_WEB.nombre, ruta: "/paginas-web" },
-  ...SOLUCIONES.map((x) => ({ nombre: x.nombre, ruta: `/demos/${x.id}` })),
-];
-
-/** Accesos a los demos públicos para mandárselos al cliente (no dan acceso a esta lista). */
-function DemosSolvera() {
-  const [copiado, setCopiado] = useState("");
-  const copiar = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopiado(url);
-      setTimeout(() => setCopiado(""), 1800);
-    } catch {
-      window.prompt("Copia la liga:", url);
-    }
-  };
-  return (
-    <details className="mt-4 rounded-2xl border border-line bg-white px-4 py-3" open>
-      <summary className="cursor-pointer text-[15px] font-bold">
-        Demos de Solvera <span className="font-normal text-muted">· para mandarle al cliente</span>
-      </summary>
-      <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-        {DEMOS.map((d) => {
-          const url = SITIO + d.ruta;
-          return (
-            <li key={d.ruta} className="flex items-center justify-between gap-2 rounded-xl border border-line px-3 py-2">
-              <span className="text-[14px] font-semibold">{d.nombre}</span>
-              <span className="flex flex-none gap-1.5">
-                <a href={url} target="_blank" rel="noopener" className="btn !min-h-[34px] !px-3 !py-1.5 text-[13px]">
-                  Abrir
-                </a>
-                <button type="button" onClick={() => copiar(url)} className="btn btn-pri !min-h-[34px] !px-3 !py-1.5 text-[13px]">
-                  {copiado === url ? "¡Copiada!" : "Copiar liga"}
-                </button>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </details>
   );
 }
 
