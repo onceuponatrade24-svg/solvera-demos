@@ -77,6 +77,7 @@ export function SeguimientoVentas({
 }) {
   const registros = useMemo(() => armarRegistros(hojas), [hojas]);
   const [anio, setAnio] = useState<number>(2026);
+  const [soloVarias, setSoloVarias] = useState(false);
   const [busca, setBusca] = useState("");
   const [llamadas, setLlamadas] = useState<Record<string, Llamada>>({});
   const [avisoGuardado, setAvisoGuardado] = useState(true);
@@ -152,10 +153,12 @@ export function SeguimientoVentas({
 
   const filas = useMemo(() => {
     const q = sinAcentos(busca.trim());
-    const lista = porAnio.get(anio) ?? [];
+    const lista = (porAnio.get(anio) ?? []).filter((r) => !soloVarias || r.compras > 1);
     if (!q) return lista;
-    return lista.filter((r) => sinAcentos(`${r.cliente} ${r.ciudad} ${r.celular} ${r.medio} ${r.numVenta} ${r.origen}`).includes(q));
-  }, [porAnio, anio, busca]);
+    return lista.filter((r) =>
+      sinAcentos(`${r.cliente} ${r.ciudad} ${r.celular} ${r.medio} ${r.numVenta} ${r.origenes.join(" ")} ${r.compras > 1 ? "mas de una compra" : ""}`).includes(q),
+    );
+  }, [porAnio, anio, busca, soloVarias]);
 
   // Numeración corrida del 1 en adelante dentro de cada año.
   const numero = useMemo(() => {
@@ -222,6 +225,10 @@ export function SeguimientoVentas({
         aria-label="Buscar"
         className="mt-3 w-full rounded-2xl border border-line2 bg-white px-4 py-3 text-base outline-none focus:border-solar sm:max-w-md"
       />
+      <label className="mt-2 flex w-fit cursor-pointer items-center gap-2 text-[14px] font-semibold">
+        <input type="checkbox" checked={soloVarias} onChange={(e) => setSoloVarias(e.target.checked)} className="h-4 w-4 accent-solar" />
+        Solo clientes con más de una compra
+      </label>
 
       {!avisoGuardado && (
         <p className="mt-2 text-sm font-semibold text-bad">
@@ -255,7 +262,11 @@ export function SeguimientoVentas({
                 <tr key={r.id} className="border-b border-line last:border-0">
                   <td className="whitespace-nowrap px-3 py-2.5">
                     <span className="font-semibold">{numero.get(r.id)}</span>{" "}
-                    <span className="ml-1 rounded-full bg-[#f2f2f2] px-1.5 py-0.5 text-[10.5px] font-bold text-muted">{r.origen}</span>
+                    {r.origenes.map((o) => (
+                      <span key={o} className="ml-1 rounded-full bg-[#f2f2f2] px-1.5 py-0.5 text-[10.5px] font-bold text-muted">
+                        {o}
+                      </span>
+                    ))}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-muted">{fechaCorta(r.fechaContacto) || "—"}</td>
                   <td className="px-3 py-2.5 text-muted">{r.medio}</td>
@@ -310,6 +321,11 @@ export function SeguimientoVentas({
                     />
                   </td>
                   <td className="px-3 py-1.5">
+                    {r.compras > 1 && (
+                      <p className="mb-1 whitespace-nowrap text-[12.5px] font-bold text-solar">
+                        ★ Más de una compra ({r.compras})
+                      </p>
+                    )}
                     <Comentario
                       valor={l.comentario ?? ""}
                       guardar={(comentario) => actualizar(r.id, { comentario })}

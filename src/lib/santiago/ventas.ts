@@ -20,6 +20,10 @@ export type Registro = {
   cliente: string;
   celular: string;
   ciudad: string;
+  /** Cuántas compras tiene este teléfono en todo el listado (1 = una sola). */
+  compras: number;
+  /** De qué hojas salieron esas compras. */
+  origenes: Origen[];
 };
 
 const PESTANAS: { nombre: string; origen: Origen }[] = [
@@ -97,14 +101,51 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
         cliente,
         celular: v(f, c.cel),
         ciudad: v(f, c.ciudad),
+        compras: 1,
+        origenes: [origen],
       });
     });
   }
   // Por año y fecha de contacto (las de igual fecha conservan su orden original).
-  return salida
+  const ordenadas = salida
     .map((r, i) => ({ r, i }))
     .sort((a, b) => a.r.anio - b.r.anio || (a.r.fechaContacto || "9").localeCompare(b.r.fechaContacto || "9") || a.i - b.i)
     .map((x) => x.r);
+  return sinRepetidos(ordenadas);
+}
+
+/** Últimos 10 dígitos del teléfono; vacío si no hay un número completo. */
+const telClave = (t: string) => {
+  const d = t.replace(/\D/g, "");
+  return d.length >= 10 ? d.slice(-10) : "";
+};
+
+/**
+ * Un solo renglón por teléfono: se queda la compra más reciente (año y fecha de
+ * contacto) y se anota cuántas compras hubo. Sin teléfono no se junta nada.
+ */
+function sinRepetidos(lista: Registro[]): Registro[] {
+  const grupos = new Map<string, Registro[]>();
+  for (const r of lista) {
+    const k = telClave(r.celular);
+    if (!k) continue;
+    const g = grupos.get(k);
+    if (g) g.push(r);
+    else grupos.set(k, [r]);
+  }
+  const quitar = new Set<Registro>();
+  for (const g of grupos.values()) {
+    if (g.length < 2) continue;
+    const ultima = g[g.length - 1];
+    if (ultima.cliente.replace(/[^\p{L}]/gu, "").length < 3) {
+      ultima.cliente = g.reduce((a, r) => (r.cliente.length > a.length ? r.cliente : a), ultima.cliente);
+    }
+    if (!ultima.ciudad) ultima.ciudad = g.find((r) => r.ciudad)?.ciudad ?? "";
+    ultima.compras = g.length;
+    ultima.origenes = (["W", "KT", "MDT"] as Origen[]).filter((o) => g.some((r) => r.origen === o));
+    for (const r of g) if (r !== ultima) quitar.add(r);
+  }
+  return lista.filter((r) => !quitar.has(r));
 }
 
 /* ---------- llamadas (se guardan en el navegador) ---------- */
