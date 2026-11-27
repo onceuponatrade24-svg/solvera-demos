@@ -247,9 +247,9 @@ export default function Asistente({ narrar }: DemoProps) {
     if (espera.current) clearTimeout(espera.current);
     setEscribiendo(false);
     setConPersona(false);
-    setTemas(["Facial"]);
-    setMensajes(INICIO);
-    narrar("Conversación reiniciada. Son las 11:47 de la noche y el asistente sigue contestando.");
+    setTemas([]);
+    setMensajes([]);
+    narrar("Conversación borrada. Escribe o elige una pregunta: son las 11:47 de la noche y el asistente sigue contestando.");
   }
 
   const fila = "flex justify-between gap-2.5 border-b border-black/[0.07] pb-2.5";
@@ -287,6 +287,11 @@ export default function Asistente({ narrar }: DemoProps) {
           </div>
 
           <div ref={caja} className="grid h-[310px] grid-cols-[minmax(0,1fr)] content-start gap-2 overflow-y-auto p-3.5" aria-live="off">
+            {mensajes.length === 0 && !escribiendo && (
+              <p className="justify-self-center rounded-[14px] bg-white/80 px-3 py-2 text-center text-[0.78rem] text-muted">
+                Conversación nueva. Escribe como cliente o toca una pregunta.
+              </p>
+            )}
             {mensajes.map((m, i) => (
               <Burbuja key={i} m={m} skin={skin} />
             ))}
@@ -345,6 +350,7 @@ export default function Asistente({ narrar }: DemoProps) {
           <div>
             <span className="text-[0.8rem] text-muted">Temas del cliente</span>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {temas.length === 0 && <span className="text-[11.5px] text-muted">Todavía ninguno</span>}
               {temas.map((t) => (
                 <span key={t} className="rounded-full bg-[#f1f1f1] px-[11px] py-1 text-[11.5px] font-bold text-[#555]">
                   {t}
