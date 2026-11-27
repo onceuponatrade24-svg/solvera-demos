@@ -73,7 +73,7 @@ const NOMBRE_ORIGEN: Record<Origen | "", string> = {
   W: "W (Alfredo Valencia / VENTAS EDGAR WE)",
   KT: "KT (Kingoftime / VENTAS EDGAR KT)",
   MDT: "Ventas vendedores MDT",
-  ENT: "Grupos de Entregas (otra persona)",
+  ENT: "Tarjeta de otra persona (sin etiqueta)",
 };
 
 export function SeguimientoVentas({
@@ -240,7 +240,7 @@ export function SeguimientoVentas({
       />
       <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por origen">
         <span className="mr-1 text-[13px] font-semibold text-muted">Origen:</span>
-        {(["", "PF", "W", "KT", "MDT", "ENT"] as (Origen | "")[]).map((o) => {
+        {(["", "PF", "W", "KT", "MDT"] as (Origen | "")[]).map((o) => {
           const n = (porAnio.get(anio) ?? []).filter((r) => !o || r.origenes.includes(o)).length;
           if (o && !n) return null;
           return (
@@ -295,7 +295,7 @@ export function SeguimientoVentas({
               return (
                 <tr key={r.id} className="border-b border-line last:border-0">
                   <td className="whitespace-nowrap px-3 py-2.5">
-                    {r.origenes.map((o) => (
+                    {r.origenes.filter((o) => o !== "ENT").map((o) => (
                       <span
                         key={o}
                         className={`mr-1 rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${o === "PF" ? "bg-peach text-solar" : "bg-[#f2f2f2] text-muted"}`}
