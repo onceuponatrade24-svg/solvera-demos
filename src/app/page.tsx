@@ -51,6 +51,9 @@ export default function Inicio() {
             <p className="text-[1.05rem] text-muted">
               Cada demo trae una explicación corta de qué es, cómo funciona y para quién sirve.
             </p>
+            <p className="w-fit rounded-full bg-peach px-4 py-2 text-[0.95rem] font-bold text-ink">
+              ▶ Todos se pueden probar en vivo: entra a cualquiera y pícale.
+            </p>
           </div>
 
           <div className="grid gap-4">
@@ -115,9 +118,6 @@ export default function Inicio() {
                           className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
                         />
                       )}
-                      <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-[12px] font-bold text-ink shadow-sm transition group-hover:bg-solar group-hover:text-white">
-                        ▶ Pruébalo en vivo
-                      </span>
                     </div>
                     <div className="flex flex-1 flex-col gap-2 p-5">
                       <div className="flex items-center gap-3">
