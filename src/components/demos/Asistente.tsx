@@ -67,16 +67,68 @@ const CONOCIMIENTO = [
 
 const RAPIDAS = ["¿Qué horario tienen?", "¿Dónde están?", "Quiero agendar", "¿Aceptan tarjeta?", "Quiero hablar con una persona"];
 
-/** Colores de cada canal para la barra del chat. */
-const COLOR: Record<Canal, string> = {
-  WhatsApp: "#128c7e",
-  Instagram: "#c13584",
-  Facebook: "#1877f2",
-  TikTok: "#111111",
+/** Cómo se ve cada app: barra de arriba, fondo, burbujas y botón de enviar. */
+type Skin = {
+  barra: React.CSSProperties;
+  sub: string;
+  anillo: string;
+  fondo: string;
+  miBurbuja: React.CSSProperties;
+  suBurbuja: React.CSSProperties;
+  enviar: React.CSSProperties;
+  placeholder: string;
+  icono: string;
+};
+const SKIN: Record<Canal, Skin> = {
+  WhatsApp: {
+    barra: { background: "#075e54", color: "#fff" },
+    sub: "en línea",
+    anillo: "none",
+    fondo: "#efeae2",
+    miBurbuja: { background: "#d9fdd3", color: "#111b21" },
+    suBurbuja: { background: "#ffffff", color: "#111b21" },
+    enviar: { background: "#00a884", color: "#fff" },
+    placeholder: "Mensaje",
+    icono: "📞",
+  },
+  Instagram: {
+    barra: { background: "#ffffff", color: "#000", borderBottom: "1px solid #efefef" },
+    sub: "Activo ahora",
+    anillo: "linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5)",
+    fondo: "#ffffff",
+    miBurbuja: { background: "linear-gradient(135deg,#a033ff,#5b51f8 60%,#3797f0)", color: "#fff" },
+    suBurbuja: { background: "#efefef", color: "#000" },
+    enviar: { background: "#3797f0", color: "#fff" },
+    placeholder: "Envía un mensaje…",
+    icono: "📹",
+  },
+  Facebook: {
+    barra: { background: "#ffffff", color: "#050505", borderBottom: "1px solid #e4e6eb" },
+    sub: "Activo ahora · Messenger",
+    anillo: "#1877f2",
+    fondo: "#ffffff",
+    miBurbuja: { background: "#0084ff", color: "#fff" },
+    suBurbuja: { background: "#e4e6eb", color: "#050505" },
+    enviar: { background: "#0084ff", color: "#fff" },
+    placeholder: "Aa",
+    icono: "📞",
+  },
+  TikTok: {
+    barra: { background: "#ffffff", color: "#161823", borderBottom: "1px solid #f1f1f2" },
+    sub: "Activo ahora",
+    anillo: "linear-gradient(135deg,#25f4ee,#fe2c55)",
+    fondo: "#ffffff",
+    miBurbuja: { background: "#fe2c55", color: "#fff" },
+    suBurbuja: { background: "#f1f1f2", color: "#161823" },
+    enviar: { background: "#fe2c55", color: "#fff" },
+    placeholder: "Enviar mensaje…",
+    icono: "⋯",
+  },
 };
 
 export default function Asistente({ narrar }: DemoProps) {
   const [canal, setCanal] = useState<Canal>("WhatsApp");
+  const skin = SKIN[canal];
   const [mensajes, setMensajes] = useState<Mensaje[]>(INICIO);
   const [temas, setTemas] = useState<string[]>(["Facial"]);
   const [conPersona, setConPersona] = useState(false);
@@ -156,7 +208,7 @@ export default function Asistente({ narrar }: DemoProps) {
 
   function cambiarCanal(c: Canal) {
     setCanal(c);
-    narrar(`Mismo asistente, mismo conocimiento, ahora en ${c}. Todos los canales llegan a una sola bandeja.`);
+    narrar(`Así se ve en ${c}. Mismo asistente y mismo conocimiento en todos los canales, y todo llega a una sola bandeja.`);
   }
 
   function reiniciar() {
@@ -188,19 +240,25 @@ export default function Asistente({ narrar }: DemoProps) {
 
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         {/* Teléfono */}
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto_auto] overflow-hidden rounded-[20px] border border-line bg-[#efeae2]">
-          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-4 py-3 text-[0.9rem] text-white" style={{ background: COLOR[canal] }}>
-            <b className="min-w-0">{NEGOCIO}</b>
-            <span className="whitespace-nowrap text-[0.78rem] font-semibold tabular-nums opacity-90">
-              {canal} · 11:47 p.m.
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto_auto] overflow-hidden rounded-[20px] border border-line transition-colors duration-300" style={{ background: skin.fondo }}>
+          <div className="flex items-center gap-2.5 px-3.5 py-2.5 text-[0.9rem] transition-colors duration-300" style={skin.barra}>
+            <span className="shrink-0 rounded-full p-[2px]" style={{ background: skin.anillo }}>
+              <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#f6d7e4] text-sm font-black text-[#a8326e]">EL</span>
             </span>
+            <span className="min-w-0 flex-1">
+              <b className="block truncate leading-tight">{NEGOCIO}</b>
+              <span className="block truncate text-[0.74rem] opacity-75">
+                {skin.sub} · {canal} · 11:47 p.m.
+              </span>
+            </span>
+            <span className="shrink-0 text-lg opacity-80" aria-hidden>{skin.icono}</span>
           </div>
 
           <div ref={caja} className="grid h-[310px] grid-cols-[minmax(0,1fr)] content-start gap-2 overflow-y-auto p-3.5" aria-live="off">
             {mensajes.map((m, i) => (
-              <Burbuja key={i} m={m} />
+              <Burbuja key={i} m={m} skin={skin} />
             ))}
-            {escribiendo && <Burbuja m={{ de: "asistente", texto: "Escribiendo…" }} />}
+            {escribiendo && <Burbuja m={{ de: "asistente", texto: "Escribiendo…" }} skin={skin} />}
           </div>
 
           <div className="flex flex-wrap gap-1.5 px-3.5 pb-3">
@@ -225,13 +283,13 @@ export default function Asistente({ narrar }: DemoProps) {
           >
             <input
               className="h-11 min-w-0 flex-1 rounded-full border border-line2 bg-white px-4 text-base"
-              placeholder="Escribe como cliente…"
+              placeholder={skin.placeholder}
               aria-label="Mensaje"
               autoComplete="off"
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
             />
-            <button type="submit" className="btn btn-pri px-4">
+            <button type="submit" className="rounded-full px-4 text-sm font-bold transition-colors duration-300" style={skin.enviar}>
               Enviar
             </button>
           </form>
@@ -278,7 +336,7 @@ export default function Asistente({ narrar }: DemoProps) {
   );
 }
 
-function Burbuja({ m }: { m: Mensaje }) {
+function Burbuja({ m, skin }: { m: Mensaje; skin: Skin }) {
   if (m.de === "sistema")
     return (
       <div className="justify-self-center rounded-[14px] bg-peach px-3 py-2 text-center text-[0.78rem] font-semibold text-warn">
@@ -289,8 +347,9 @@ function Burbuja({ m }: { m: Mensaje }) {
   return (
     <div
       className={`max-w-[86%] whitespace-pre-line rounded-[14px] px-[13px] py-[9px] text-[0.88rem] shadow-[0_1px_1px_rgba(0,0,0,0.06)] ${
-        cliente ? "justify-self-end rounded-br-[3px] bg-[#d9fdd3]" : "justify-self-start rounded-bl-[3px] bg-white"
+        cliente ? "justify-self-end rounded-br-[3px]" : "justify-self-start rounded-bl-[3px]"
       }`}
+      style={cliente ? skin.miBurbuja : skin.suBurbuja}
     >
       {m.texto}
     </div>
