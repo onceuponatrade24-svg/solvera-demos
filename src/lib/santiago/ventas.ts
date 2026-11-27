@@ -2,13 +2,15 @@
  * Seguimiento de Ventas: convierte las pestañas de ventas (W y KT) en registros
  * para la tabla de llamadas. Nunca incluye pendientes.
  * MDT = ventas de vendedores MDT (archivo "Ventas vendedores MDT").
- * PF = clientes que manda Pulso Fino en los grupos "Entregas" de WhatsApp.
+ * ENTREGAS WHATSAPP = tarjetas de contacto de los grupos "Entregas"; su columna Origen
+ * dice quién la mandó: PF (Sofía / Rodrigo Cortés / Pulso Fino), W (Alfredo Valencia),
+ * KT (Kingoftime) o ENT (otra persona, por ejemplo el repartidor).
  */
 
 import { PAQUETES } from "@/data/portafolio";
 import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
 
-export type Origen = "W" | "KT" | "MDT" | "PF";
+export type Origen = "W" | "KT" | "MDT" | "PF" | "ENT";
 
 export type Registro = {
   id: string;
@@ -21,7 +23,7 @@ export type Registro = {
   cliente: string;
   celular: string;
   ciudad: string;
-  /** Nota que trae la hoja (solo Pulso Fino: cuánto liquida). */
+  /** Nota que trae la hoja (Entregas WhatsApp: quién la mandó y cuánto liquida). */
   nota: string;
   /** Cuántas compras tiene este teléfono en todo el listado (1 = una sola). */
   compras: number;
@@ -33,7 +35,7 @@ const PESTANAS: { nombre: string; origen: Origen }[] = [
   { nombre: "VENTAS EDGAR WE", origen: "W" },
   { nombre: "VENTAS EDGAR KT", origen: "KT" },
   { nombre: "VENTAS MDT", origen: "MDT" },
-  { nombre: "PULSO FINO", origen: "PF" },
+  { nombre: "ENTREGAS WHATSAPP", origen: "PF" },
 ];
 export const ANIOS = [2025, 2026] as const;
 
@@ -78,6 +80,7 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
       cliente: col("cliente"),
       cel: col("celular"),
       coment: col("comentarios"),
+      origen: col("origen"),
       ciudad: col("ciudad"),
     };
     const v = (f: string[], i: number) => (i >= 0 ? txt(f[i]) : "");
@@ -96,19 +99,20 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
       if (!cliente || !anio) return;
       if (/pendiente/i.test(v(f, c.entrega))) return;
       if (!(ANIOS as readonly number[]).includes(anio)) return;
+      const o = (["W", "KT", "MDT", "PF", "ENT"] as Origen[]).find((x) => x === v(f, c.origen)) ?? origen;
       salida.push({
         id: `${origen}-${i}-${v(f, c.num)}-${cliente}`.toLowerCase().replace(/\s+/g, "-"),
-        origen,
+        origen: o,
         anio,
         fechaContacto,
         numVenta: v(f, c.num),
-        medio: v(f, c.medio),
+        medio: v(f, c.medio) || "PUBLICIDAD",
         cliente,
         celular: v(f, c.cel),
         ciudad: v(f, c.ciudad),
-        nota: origen === "PF" ? v(f, c.coment) : "",
+        nota: c.origen >= 0 ? v(f, c.coment) : "",
         compras: 1,
-        origenes: [origen],
+        origenes: [o],
       });
     });
   }
@@ -149,7 +153,7 @@ function sinRepetidos(lista: Registro[]): Registro[] {
     if (!ultima.ciudad) ultima.ciudad = g.find((r) => r.ciudad)?.ciudad ?? "";
     ultima.compras = g.length;
     ultima.nota = g.map((r) => r.nota).filter(Boolean).join(" · ");
-    ultima.origenes = (["W", "KT", "MDT", "PF"] as Origen[]).filter((o) => g.some((r) => r.origen === o));
+    ultima.origenes = (["PF", "W", "KT", "MDT", "ENT"] as Origen[]).filter((o) => g.some((r) => r.origen === o));
     for (const r of g) if (r !== ultima) quitar.add(r);
   }
   return lista.filter((r) => !quitar.has(r));

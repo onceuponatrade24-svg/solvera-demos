@@ -14,6 +14,7 @@ import {
   leerLlamadas,
   type Estatus,
   type Llamada,
+  type Origen,
   type Registro,
 } from "@/lib/santiago/ventas";
 
@@ -66,6 +67,15 @@ async function pedir(codigo: string, metodo: "GET" | "POST", cuerpo?: unknown) {
   return { ok: r.ok && !!d?.ok, status: r.status, datos: d };
 }
 
+const NOMBRE_ORIGEN: Record<Origen | "", string> = {
+  "": "Todos los orígenes",
+  PF: "Pulso Fino",
+  W: "W (Alfredo Valencia / VENTAS EDGAR WE)",
+  KT: "KT (Kingoftime / VENTAS EDGAR KT)",
+  MDT: "Ventas vendedores MDT",
+  ENT: "Grupos de Entregas (otra persona)",
+};
+
 export function SeguimientoVentas({
   hojas,
   codigo,
@@ -78,6 +88,7 @@ export function SeguimientoVentas({
   const registros = useMemo(() => armarRegistros(hojas), [hojas]);
   const [anio, setAnio] = useState<number>(2026);
   const [soloVarias, setSoloVarias] = useState(false);
+  const [filtroOrigen, setFiltroOrigen] = useState<Origen | "">("");
   const [busca, setBusca] = useState("");
   const [llamadas, setLlamadas] = useState<Record<string, Llamada>>({});
   const [avisoGuardado, setAvisoGuardado] = useState(true);
@@ -153,12 +164,14 @@ export function SeguimientoVentas({
 
   const filas = useMemo(() => {
     const q = sinAcentos(busca.trim());
-    const lista = (porAnio.get(anio) ?? []).filter((r) => !soloVarias || r.compras > 1);
+    const lista = (porAnio.get(anio) ?? []).filter(
+      (r) => (!soloVarias || r.compras > 1) && (!filtroOrigen || r.origenes.includes(filtroOrigen)),
+    );
     if (!q) return lista;
     return lista.filter((r) =>
       sinAcentos(`${r.cliente} ${r.ciudad} ${r.celular} ${r.medio} ${r.numVenta} ${r.origenes.join(" ")} ${r.compras > 1 ? "mas de una compra" : ""}`).includes(q),
     );
-  }, [porAnio, anio, busca, soloVarias]);
+  }, [porAnio, anio, busca, soloVarias, filtroOrigen]);
 
   // Numeración corrida del 1 en adelante dentro de cada año.
   const numero = useMemo(() => {
@@ -181,7 +194,7 @@ export function SeguimientoVentas({
           <p className="label text-solar">Privado</p>
           <h1 className="text-[26px] font-extrabold leading-tight">Clientes Comercializadora TRD</h1>
           <p className="text-[13px] text-muted">
-            Registros de W, KT, MDT y Pulso Fino (PF), por fecha de contacto. Sin pendientes.
+            Registros de W, KT, MDT y grupos de Entregas (PF = Pulso Fino), por fecha de contacto. Sin pendientes.
           </p>
         </div>
         <button className="btn !min-h-[38px] flex-none !px-3.5 !py-2 text-[13px]" onClick={salir}>
@@ -225,6 +238,27 @@ export function SeguimientoVentas({
         aria-label="Buscar"
         className="mt-3 w-full rounded-2xl border border-line2 bg-white px-4 py-3 text-base outline-none focus:border-solar sm:max-w-md"
       />
+      <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por origen">
+        <span className="mr-1 text-[13px] font-semibold text-muted">Origen:</span>
+        {(["", "PF", "W", "KT", "MDT", "ENT"] as (Origen | "")[]).map((o) => {
+          const n = (porAnio.get(anio) ?? []).filter((r) => !o || r.origenes.includes(o)).length;
+          if (o && !n) return null;
+          return (
+            <button
+              key={o || "todos"}
+              type="button"
+              onClick={() => setFiltroOrigen(o)}
+              aria-pressed={filtroOrigen === o}
+              title={NOMBRE_ORIGEN[o]}
+              className={`rounded-full border px-3 py-1.5 text-[13px] font-bold ${
+                filtroOrigen === o ? "border-ink bg-ink text-white" : "border-line2 bg-white text-ink"
+              }`}
+            >
+              {o || "Todos"} <span className={filtroOrigen === o ? "text-solar3" : "text-muted"}>{n}</span>
+            </button>
+          );
+        })}
+      </div>
       <label className="mt-2 flex w-fit cursor-pointer items-center gap-2 text-[14px] font-semibold">
         <input type="checkbox" checked={soloVarias} onChange={(e) => setSoloVarias(e.target.checked)} className="h-4 w-4 accent-solar" />
         Solo clientes con más de una compra
@@ -261,12 +295,15 @@ export function SeguimientoVentas({
               return (
                 <tr key={r.id} className="border-b border-line last:border-0">
                   <td className="whitespace-nowrap px-3 py-2.5">
-                    <span className="font-semibold">{numero.get(r.id)}</span>{" "}
                     {r.origenes.map((o) => (
-                      <span key={o} className="ml-1 rounded-full bg-[#f2f2f2] px-1.5 py-0.5 text-[10.5px] font-bold text-muted">
+                      <span
+                        key={o}
+                        className={`mr-1 rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${o === "PF" ? "bg-peach text-solar" : "bg-[#f2f2f2] text-muted"}`}
+                      >
                         {o}
                       </span>
                     ))}
+                    <span className="font-semibold">{numero.get(r.id)}</span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-muted">{fechaCorta(r.fechaContacto) || "—"}</td>
                   <td className="px-3 py-2.5 text-muted">{r.medio}</td>
