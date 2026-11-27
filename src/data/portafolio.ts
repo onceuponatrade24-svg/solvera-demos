@@ -123,7 +123,7 @@ export const CLIENTES: Sitio[] = [
     nombre: "Perfumería Frizzia",
     tipo: "Tienda en línea · Perfumería",
     texto: "Catálogo con filtros, carrito y venta por WhatsApp",
-    url: "https://perfumeriafrizzia.com",
+    url: "https://www.perfumeriafrizzia.com/",
     paquete: CATALOGO,
     embebible: false,
   },

@@ -16,6 +16,7 @@ export function VistaPrevia({ sitio }: { sitio: Sitio }) {
   const [escala, setEscala] = useState(0.25);
   const [visible, setVisible] = useState(false);
   const [lista, setLista] = useState(false);
+  const [falloFoto, setFalloFoto] = useState(false);
 
   useEffect(() => {
     const el = caja.current;
@@ -68,10 +69,23 @@ export function VistaPrevia({ sitio }: { sitio: Sitio }) {
           )}
         </>
       ) : (
-        <div className="absolute inset-0 grid place-content-center gap-1 bg-gradient-to-br from-peach to-white p-4 text-center">
-          <span className="text-xl font-black tracking-[-0.02em]">{sitio.nombre}</span>
-          <span className="text-[12px] font-semibold text-muted">{dominio}</span>
-        </div>
+        <>
+          <div className="absolute inset-0 grid place-content-center gap-1 bg-gradient-to-br from-peach to-white p-4 text-center">
+            <span className="text-xl font-black tracking-[-0.02em]">{sitio.nombre}</span>
+            <span className="text-[12px] font-semibold text-muted">{dominio}</span>
+          </div>
+          {visible && !falloFoto && (
+            // Captura real de la página (la página no se deja mostrar dentro de otra).
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`https://image.thum.io/get/width/${ANCHO}/crop/${ALTO}/noanimate/${sitio.url}`}
+              alt=""
+              loading="lazy"
+              onError={() => setFalloFoto(true)}
+              className="absolute inset-x-0 bottom-0 top-5 h-[calc(100%-1.25rem)] w-full object-cover object-top"
+            />
+          )}
+        </>
       )}
       {/* barra tipo navegador */}
       <div className="absolute inset-x-0 top-0 flex h-5 items-center gap-1 bg-white/90 px-2 backdrop-blur">
