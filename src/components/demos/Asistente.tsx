@@ -243,7 +243,7 @@ export default function Asistente({ narrar }: DemoProps) {
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto_auto] overflow-hidden rounded-[20px] border border-line transition-colors duration-300" style={{ background: skin.fondo }}>
           <div className="flex items-center gap-2.5 px-3.5 py-2.5 text-[0.9rem] transition-colors duration-300" style={skin.barra}>
             <span className="shrink-0 rounded-full p-[2px]" style={{ background: skin.anillo }}>
-              <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#f6d7e4] text-sm font-black text-[#a8326e]">EL</span>
+              <Foto className="h-9 w-9 border-2 border-white" />
             </span>
             <span className="min-w-0 flex-1">
               <b className="block truncate leading-tight">{NEGOCIO}</b>
@@ -336,6 +336,18 @@ export default function Asistente({ narrar }: DemoProps) {
   );
 }
 
+/** Foto de perfil del negocio ficticio (salón de belleza). Si no carga, muestra sus iniciales. */
+const FOTO = "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=160&h=160&q=70";
+function Foto({ className = "" }: { className?: string }) {
+  const [falla, setFalla] = useState(false);
+  return falla ? (
+    <span className={`grid place-items-center rounded-full bg-[#f6d7e4] text-[11px] font-black text-[#a8326e] ${className}`}>EL</span>
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={FOTO} alt="" onError={() => setFalla(true)} className={`rounded-full object-cover ${className}`} />
+  );
+}
+
 function Burbuja({ m, skin }: { m: Mensaje; skin: Skin }) {
   if (m.de === "sistema")
     return (
@@ -344,6 +356,15 @@ function Burbuja({ m, skin }: { m: Mensaje; skin: Skin }) {
       </div>
     );
   const cliente = m.de === "cliente";
+  if (!cliente)
+    return (
+      <div className="flex max-w-[92%] items-end gap-1.5 justify-self-start">
+        <Foto className="h-6 w-6 shrink-0" />
+        <div className="whitespace-pre-line rounded-[14px] rounded-bl-[3px] px-[13px] py-[9px] text-[0.88rem] shadow-[0_1px_1px_rgba(0,0,0,0.06)]" style={skin.suBurbuja}>
+          {m.texto}
+        </div>
+      </div>
+    );
   return (
     <div
       className={`max-w-[86%] whitespace-pre-line rounded-[14px] px-[13px] py-[9px] text-[0.88rem] shadow-[0_1px_1px_rgba(0,0,0,0.06)] ${
