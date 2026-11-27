@@ -2,12 +2,13 @@
  * Seguimiento de Ventas: convierte las pestañas de ventas (W y KT) en registros
  * para la tabla de llamadas. Nunca incluye pendientes.
  * MDT = ventas de vendedores MDT (archivo "Ventas vendedores MDT").
+ * PF = clientes que manda Pulso Fino en los grupos "Entregas" de WhatsApp.
  */
 
 import { PAQUETES } from "@/data/portafolio";
 import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
 
-export type Origen = "W" | "KT" | "MDT";
+export type Origen = "W" | "KT" | "MDT" | "PF";
 
 export type Registro = {
   id: string;
@@ -20,6 +21,8 @@ export type Registro = {
   cliente: string;
   celular: string;
   ciudad: string;
+  /** Nota que trae la hoja (solo Pulso Fino: cuánto liquida). */
+  nota: string;
   /** Cuántas compras tiene este teléfono en todo el listado (1 = una sola). */
   compras: number;
   /** De qué hojas salieron esas compras. */
@@ -30,6 +33,7 @@ const PESTANAS: { nombre: string; origen: Origen }[] = [
   { nombre: "VENTAS EDGAR WE", origen: "W" },
   { nombre: "VENTAS EDGAR KT", origen: "KT" },
   { nombre: "VENTAS MDT", origen: "MDT" },
+  { nombre: "PULSO FINO", origen: "PF" },
 ];
 export const ANIOS = [2025, 2026] as const;
 
@@ -73,6 +77,7 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
       entrega: col("fecha entrega"),
       cliente: col("cliente"),
       cel: col("celular"),
+      coment: col("comentarios"),
       ciudad: col("ciudad"),
     };
     const v = (f: string[], i: number) => (i >= 0 ? txt(f[i]) : "");
@@ -101,6 +106,7 @@ export function armarRegistros(hojas: Record<string, string[][]>): Registro[] {
         cliente,
         celular: v(f, c.cel),
         ciudad: v(f, c.ciudad),
+        nota: origen === "PF" ? v(f, c.coment) : "",
         compras: 1,
         origenes: [origen],
       });
@@ -142,7 +148,8 @@ function sinRepetidos(lista: Registro[]): Registro[] {
     }
     if (!ultima.ciudad) ultima.ciudad = g.find((r) => r.ciudad)?.ciudad ?? "";
     ultima.compras = g.length;
-    ultima.origenes = (["W", "KT", "MDT"] as Origen[]).filter((o) => g.some((r) => r.origen === o));
+    ultima.nota = g.map((r) => r.nota).filter(Boolean).join(" · ");
+    ultima.origenes = (["W", "KT", "MDT", "PF"] as Origen[]).filter((o) => g.some((r) => r.origen === o));
     for (const r of g) if (r !== ultima) quitar.add(r);
   }
   return lista.filter((r) => !quitar.has(r));

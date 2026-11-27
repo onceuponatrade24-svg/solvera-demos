@@ -181,7 +181,7 @@ export function SeguimientoVentas({
           <p className="label text-solar">Privado</p>
           <h1 className="text-[26px] font-extrabold leading-tight">Clientes Comercializadora TRD</h1>
           <p className="text-[13px] text-muted">
-            Registros de las hojas W, KT y MDT, por fecha de contacto. Sin pendientes.
+            Registros de W, KT, MDT y Pulso Fino (PF), por fecha de contacto. Sin pendientes.
           </p>
         </div>
         <button className="btn !min-h-[38px] flex-none !px-3.5 !py-2 text-[13px]" onClick={salir}>
@@ -326,6 +326,7 @@ export function SeguimientoVentas({
                         ★ Más de una compra ({r.compras})
                       </p>
                     )}
+                    {r.nota && <p className="mb-1 whitespace-nowrap text-[12.5px] text-muted">{r.nota}</p>}
                     <Comentario
                       valor={l.comentario ?? ""}
                       guardar={(comentario) => actualizar(r.id, { comentario })}
