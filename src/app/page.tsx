@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Icon } from "@/components/Icon";
+import { VistaPrevia } from "@/components/VistaPrevia";
+import { CLIENTES } from "@/data/portafolio";
 import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
 import { MENSAJE_DIAGNOSTICO, MENSAJE_GENERAL, waLink } from "@/lib/whatsapp";
 
@@ -9,6 +11,8 @@ const GRUPO_LABEL = "text-xs font-bold uppercase tracking-[0.18em] text-muted";
 
 export default function Inicio() {
   const grupos = [...new Set(SOLUCIONES.map((s) => s.grupo))];
+  const gorila = CLIENTES.find((c) => c.id === "gorilla-crown")!;
+  const otros = CLIENTES.filter((c) => ["simpson-race-products", "xolo"].includes(c.id));
 
   return (
     <>
@@ -52,17 +56,33 @@ export default function Inicio() {
           <div className="grid gap-4">
             <h2 className={GRUPO_LABEL}>{PAGINAS_WEB.grupo}</h2>
             <Link
-              className="card md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-[18px]"
+              className="card group grid gap-0 overflow-hidden p-0 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
               href={PAGINAS_WEB.liga}
             >
-              <Icon name="web" />
-              <div className="grid gap-2 md:flex-[1_1_320px]">
+              {/* Vistas previas reales: Gorilla Crown grande y dos clientes más */}
+              <div className="grid gap-2 border-b border-line bg-peach p-3 md:border-b-0 md:border-r">
+                <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition-transform duration-500 group-hover:scale-[1.01]">
+                  <VistaPrevia sitio={gorila} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {otros.map((c) => (
+                    <div key={c.id} className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
+                      <VistaPrevia sitio={c} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 p-6">
+                <Icon name="web" />
                 <h3 className="text-xl font-extrabold leading-tight">{PAGINAS_WEB.nombre}</h3>
                 <p className="text-[0.95rem] text-muted">{PAGINAS_WEB.texto}</p>
-              </div>
-              <div className="flex items-center justify-between gap-4 pt-4 text-[0.9rem] md:pt-0">
-                <b className="font-extrabold">{PAGINAS_WEB.precio}</b>
-                <span className="font-bold text-solar">Ver páginas →</span>
+                <p className="text-[0.85rem] text-muted">
+                  <b className="text-ink">Clientes:</b> {CLIENTES.map((c) => c.nombre).join(", ")}.
+                </p>
+                <div className="mt-auto flex items-center justify-between gap-4 pt-2 text-[0.9rem]">
+                  <b className="whitespace-nowrap font-extrabold">{PAGINAS_WEB.precio}</b>
+                  <span className="whitespace-nowrap font-bold text-solar">Ver páginas →</span>
+                </div>
               </div>
             </Link>
           </div>
