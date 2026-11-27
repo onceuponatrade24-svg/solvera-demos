@@ -70,15 +70,45 @@ export default function Inicio() {
           {grupos.map((g) => (
             <div key={g} className="mt-[34px] grid gap-4">
               <h2 className={GRUPO_LABEL}>{g}</h2>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(270px,100%),1fr))] gap-5">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(290px,100%),1fr))] gap-5">
                 {SOLUCIONES.filter((s) => s.grupo === g).map((s) => (
-                  <Link key={s.id} className="card" href={`/demos/${s.id}`}>
-                    <Icon name={s.icono} />
-                    <h3 className="mt-2 text-xl font-extrabold leading-tight">{s.nombre}</h3>
-                    <p className="text-[0.95rem] text-muted">{s.tarjeta}</p>
-                    <div className="mt-auto flex items-center justify-between gap-2 pt-4 text-[0.9rem]">
-                      <b className="font-extrabold">{s.precio}</b>
-                      <span className="font-bold text-solar">Probar demo →</span>
+                  <Link key={s.id} className="card group gap-0 overflow-hidden p-0" href={`/demos/${s.id}`}>
+                    <div className="relative aspect-[16/10] overflow-hidden border-b border-line bg-peach">
+                      {s.video ? (
+                        <video
+                          className="h-full w-full object-cover"
+                          src={s.video.mp4}
+                          poster={s.video.portada}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/previews/${s.id}.webp`}
+                          alt={`Vista previa del demo ${s.nombre}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
+                        />
+                      )}
+                      <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-[12px] font-bold text-ink shadow-sm transition group-hover:bg-solar group-hover:text-white">
+                        ▶ Pruébalo en vivo
+                      </span>
+                    </div>
+                    <div className="flex flex-1 flex-col gap-2 p-5">
+                      <div className="flex items-center gap-3">
+                        <Icon name={s.icono} />
+                        <h3 className="text-lg font-extrabold leading-tight">{s.nombre}</h3>
+                      </div>
+                      <p className="text-[0.93rem] text-muted">{s.tarjeta}</p>
+                      <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-[0.9rem]">
+                        <b className="whitespace-nowrap font-extrabold">{s.precio}</b>
+                        <span className="whitespace-nowrap font-bold text-solar">Probar demo →</span>
+                      </div>
                     </div>
                   </Link>
                 ))}
