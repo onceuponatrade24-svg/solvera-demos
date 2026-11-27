@@ -1,10 +1,13 @@
 import Link from "next/link";
 import type { Sitio } from "@/data/portafolio";
+import { VistaPrevia } from "./VistaPrevia";
 
 /** Tarjeta de una página del portafolio. Abre el visor interno. */
 export function SitioCard({ sitio, cliente }: { sitio: Sitio; cliente?: boolean }) {
   return (
-    <Link className="card gap-2 p-6" href={`/paginas-web/ver/${sitio.id}`}>
+    <Link className="card gap-0 overflow-hidden p-0" href={`/paginas-web/ver/${sitio.id}`}>
+      {cliente && <VistaPrevia sitio={sitio} />}
+      <div className={`flex flex-1 flex-col gap-2 ${cliente ? "p-5" : "p-6"}`}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-solar">{sitio.tipo}</span>
         {cliente && (
@@ -25,6 +28,7 @@ export function SitioCard({ sitio, cliente }: { sitio: Sitio; cliente?: boolean 
           )}
         </span>
         <span className="whitespace-nowrap font-bold text-solar">Ver página →</span>
+      </div>
       </div>
     </Link>
   );
