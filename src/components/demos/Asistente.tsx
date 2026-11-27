@@ -65,6 +65,30 @@ const CONOCIMIENTO = [
   },
 ];
 
+/** 20 preguntas de ejemplo para el demo. El asistente real contesta cualquier pregunta. */
+const PREGUNTAS: { q: string; tema: string; r: string }[] = [
+  { q: "¿Cuánto cuesta un facial?", tema: "Facial", r: "El facial hidratante cuesta $650 (50 min) y el de limpieza profunda $850 (70 min). ¿Te aparto un horario?" },
+  { q: "¿Qué facial me recomiendas para piel grasa?", tema: "Facial", r: "Para piel grasa va mejor la limpieza profunda ($850): incluye extracción, mascarilla purificante y alta frecuencia. Si es tu primera vez, te hacemos una valoración sin costo." },
+  { q: "¿Qué tipos de masaje tienen?", tema: "Masajes", r: "Tenemos masaje relajante ($700, 60 min), descontracturante ($850, 60 min), con piedras calientes ($950, 75 min) y masaje para parejas ($1,500, 60 min)." },
+  { q: "¿Tienen masaje para parejas?", tema: "Masajes", r: "Sí: masaje relajante para dos en la misma cabina, 60 minutos, $1,500 por pareja. Incluye té y aromaterapia. Conviene apartarlo con 2 días de anticipación." },
+  { q: "¿Cuánto cuesta el manicure?", tema: "Uñas", r: "Manicure tradicional $280, manicure con gel $380 y pedicure spa $420. El combo mani + pedi con gel sale en $720." },
+  { q: "¿Hacen uñas acrílicas?", tema: "Uñas", r: "Sí. Uñas acrílicas desde $550 (largo corto) y retoque desde $380. El diseño se cotiza según lo que quieras; mándanos una foto de referencia." },
+  { q: "¿Cuánto cuesta la depilación con cera?", tema: "Depilación", r: "Depilación con cera: axila $180, media pierna $280, pierna completa $450, bikini $250 y rostro $150." },
+  { q: "¿Tienen paquetes para novias?", tema: "Paquetes", r: "Sí, el paquete Novia incluye facial, manicure y pedicure con gel, peinado y maquillaje de prueba: $3,900. Para el día de la boda cotizamos servicio a domicilio." },
+  { q: "¿Venden tarjetas de regalo?", tema: "Regalos", r: "Sí, desde $500 o por un servicio específico. Te la mandamos digital por aquí o la recoges impresa. Vigencia de 6 meses." },
+  { q: "¿Qué horario tienen?", tema: "Horarios", r: "Abrimos de lunes a sábado de 10:00 a 20:00. Los domingos descansamos." },
+  { q: "¿Abren en días festivos?", tema: "Horarios", r: "Abrimos casi todos los festivos de 10:00 a 15:00. Cerramos 25 de diciembre y 1 de enero." },
+  { q: "¿Dónde están ubicados?", tema: "Ubicación", r: "Estamos en Av. Chapultepec 480, colonia Americana, Guadalajara. Hay estacionamiento a media cuadra." },
+  { q: "¿Tienen estacionamiento?", tema: "Ubicación", r: "Tenemos convenio con el estacionamiento de la esquina: la primera hora es gratis presentando tu ticket en recepción." },
+  { q: "Quiero agendar para mañana", tema: "Quiere cita", r: "Con gusto. Tengo libre mañana a las 11:00, 13:30 o 17:00. ¿Cuál te queda mejor y qué servicio te hago?" },
+  { q: "¿Necesito dejar anticipo?", tema: "Pagos", r: "Solo para servicios de más de $1,500 o paquetes: anticipo de $300 por transferencia, que se descuenta del total." },
+  { q: "¿Aceptan tarjeta?", tema: "Pagos", r: "Aceptamos efectivo, tarjeta de débito y crédito, y transferencia. Con tarjetas participantes hay 3 meses sin intereses en compras mayores a $2,000." },
+  { q: "¿Tienen promociones este mes?", tema: "Promociones", r: "Este mes: 2x1 en manicure tradicional los martes y 15% de descuento en tu primer facial. ¿Te aparto alguno?" },
+  { q: "¿Puedo cambiar mi cita?", tema: "Cambio de cita", r: "Claro. Puedes cambiarla sin costo con 24 horas de anticipación. Dime tu nombre y la nueva fecha que te gustaría y te la muevo." },
+  { q: "¿Los productos que usan son veganos?", tema: "Productos", r: "Sí, trabajamos con línea mexicana vegana y libre de crueldad animal. Si tienes alguna alergia, avísanos antes del servicio." },
+  { q: "¿Atienden a hombres?", tema: "Servicios", r: "¡Claro! Tenemos facial para caballero ($600), masajes, manicure y depilación. Muchos de nuestros clientes son hombres." },
+];
+
 const RAPIDAS = ["¿Qué horario tienen?", "¿Dónde están?", "Quiero agendar", "¿Aceptan tarjeta?", "Quiero hablar con una persona"];
 
 /** Cómo se ve cada app: barra de arriba, fondo, burbujas y botón de enviar. */
@@ -180,6 +204,14 @@ export default function Asistente({ narrar }: DemoProps) {
         narrar(
           "El asistente reconoció que hacía falta una persona, le pasó la conversación con todo el contexto y le avisó a su celular."
         );
+        return;
+      }
+
+      const exacta = PREGUNTAS.find((p) => p.q.toLowerCase() === t.toLowerCase());
+      if (exacta) {
+        setMensajes((m) => [...m, { de: "asistente", texto: exacta.r }]);
+        agregarTema(exacta.tema);
+        narrar(`Contestó al instante con la información del spa y etiquetó el tema: ${exacta.tema}. Así sabes qué pregunta más la gente.`);
         return;
       }
 
@@ -330,6 +362,25 @@ export default function Asistente({ narrar }: DemoProps) {
           <button type="button" className="btn min-h-[36px] w-fit px-3.5 py-[7px] text-[13px]" onClick={reiniciar}>
             Reiniciar conversación
           </button>
+          <div className="grid gap-2 border-t border-black/[0.07] pt-3">
+            <b className="font-extrabold">Prueba con una de estas 20 preguntas</b>
+            <div className="grid max-h-[260px] gap-1.5 overflow-y-auto pr-1">
+              {PREGUNTAS.map((p) => (
+                <button
+                  key={p.q}
+                  type="button"
+                  onClick={() => enviar(p.q)}
+                  disabled={escribiendo}
+                  className="rounded-xl border border-line2 bg-white px-3 py-2 text-left text-[0.8rem] font-medium hover:border-solar hover:text-solar disabled:opacity-60"
+                >
+                  {p.q}
+                </button>
+              ))}
+            </div>
+            <p className="rounded-xl bg-white/70 p-2.5 text-[0.78rem] leading-snug text-muted">
+              <b className="text-ink">Esto es un demo.</b> Aquí las preguntas vienen de ejemplo. El asistente real no usa preguntas prehechas: contesta cualquier duda, pregunta o aclaración de tus clientes con la información de tu negocio.
+            </p>
+          </div>
         </div>
       </div>
     </div>
