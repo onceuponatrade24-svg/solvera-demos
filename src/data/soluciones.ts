@@ -167,11 +167,11 @@ export const SOLUCIONES: Solucion[] = [
     tarjeta: "Lo que hoy alguien captura a mano, el sistema lo registra solo y sin errores.",
     precio: "desde $8,900",
     notaPrecio: "pago único · sin mensualidad, salvo herramientas con costo",
-    pruebalo: "Procesa los correos de proveedores y mira cómo se llena la hoja sola.",
+    pruebalo: "Lee facturas del correo, de las páginas de proveedores y del plan de surtido, mueve las reglas y mira los avisos que le llegan a Compras y a Almacén.",
     narracionInicial:
-      "Hay 3 correos de proveedores sin leer. Antes, alguien los capturaba uno por uno.",
+      "Hay facturas en el correo, pedidos en las páginas de proveedores y compras en el plan de surtido. Antes, alguien los capturaba uno por uno para saber qué venía en camino.",
     queEs:
-      "Revisamos un proceso que hoy se hace a mano y lo dejamos corriendo solo. El ejemplo del demo es el control de arribos de mercancía.",
+      "Revisamos un proceso que hoy se hace a mano y lo dejamos corriendo solo. El ejemplo del demo es el archivo de arribos: el sistema junta las facturas pendientes, calcula cuándo llega cada cosa según tus reglas y avisa a Compras y a Almacén.",
     comoFunciona: [
       "Revisamos contigo el proceso actual, paso por paso.",
       "Conectamos tus correos, hojas de cálculo y sistemas para que los datos pasen solos.",

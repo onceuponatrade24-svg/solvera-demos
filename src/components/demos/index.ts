@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import Agenda from "./Agenda";
 import Asistente from "./Asistente";
+import Procesos from "./Procesos";
 import Sistema from "./Sistema";
 import Tablero from "./Tablero";
 
@@ -16,4 +17,5 @@ export const DEMOS: Record<string, ComponentType<DemoProps>> = {
   agenda: Agenda,
   tablero: Tablero,
   sistema: Sistema,
+  procesos: Procesos,
 };
