@@ -112,6 +112,21 @@ export default async function PaginaSolucion({ params }: { params: Params }) {
               {s.caso && (
                 <p className="border-t border-line pt-4 text-[0.85rem] text-muted">
                   <b className="text-ink">{s.caso.etiqueta}</b> {s.caso.texto}
+                  {s.caso.ligas && s.caso.ligas.length > 0 && (
+                    <span className="mt-2 flex flex-wrap gap-1.5">
+                      {s.caso.ligas.map((l) => (
+                        <a
+                          key={l.url}
+                          href={l.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full border border-line bg-white px-3 py-1 text-[12px] font-bold text-ink hover:border-solar hover:text-solar"
+                        >
+                          {l.texto} ↗
+                        </a>
+                      ))}
+                    </span>
+                  )}
                 </p>
               )}
             </div>

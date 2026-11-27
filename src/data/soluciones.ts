@@ -37,13 +37,17 @@ export type Solucion = {
   comoFunciona: [string, string, string];
   paraQuien: string;
   incluye: string[];
-  caso?: { etiqueta: string; texto: string };
+  /** ligas: página y redes del cliente real (solo ligas confirmadas) */
+  caso?: { etiqueta: string; texto: string; ligas?: { texto: string; url: string }[] };
   /** Mensaje que se escribe solo al abrir WhatsApp */
   whatsapp: string;
   video: { mp4: string; portada: string } | null;
   /** Liga del demo funcional (con base de datos real). null mientras no esté publicado. */
   demoReal: string | null;
 };
+
+/** Página y redes de Gorilla Crown para su caso real. PENDIENTE: redes sociales (pedir ligas a Charlie). */
+const GORILLA_CROWN = [{ texto: "Página web", url: "https://gorillacrown.com" }];
 
 /** Tarjeta de páginas web: abre el portafolio dentro de este mismo sitio (/paginas-web). */
 export const PAGINAS_WEB = {
@@ -185,7 +189,11 @@ export const SOLUCIONES: Solucion[] = [
       "Conexión entre hojas, correo o CRM",
       "Capacitación a tu equipo",
     ],
-    caso: { etiqueta: "Caso real:", texto: "control de arribos de mercancía de Gorilla Crown." },
+    caso: {
+      etiqueta: "Caso real:",
+      texto: "control de arribos de mercancía de Gorilla Crown.",
+      ligas: GORILLA_CROWN,
+    },
     whatsapp: "Hola, vi el demo de automatización de procesos de Solvera Labs y quiero informes",
     video: null,
     demoReal: null,
@@ -222,6 +230,7 @@ export const SOLUCIONES: Solucion[] = [
     caso: {
       etiqueta: "Caso real:",
       texto: "este demo es una copia de la app de operaciones que usa Gorilla Crown, con una distribuidora ficticia.",
+      ligas: GORILLA_CROWN,
     },
     whatsapp: "Hola, vi el demo del sistema operativo de empresa de Solvera Labs y quiero una consultoría",
     video: null,
