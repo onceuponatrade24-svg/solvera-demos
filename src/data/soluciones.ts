@@ -9,7 +9,7 @@
  *   2. Crea su demo en src/components/demos/ y regístralo en src/components/demos/index.ts.
  *
  * Videos: pon el archivo en public/videos/<id>.mp4 y su portada en public/videos/<id>.jpg,
- * y escribe aquí  video: { mp4: "/videos/<id>.mp4", portada: "/videos/<id>.jpg" }.
+ * y escribe aquí  video: { mp4: "/videos/<id>.mp4", tarjeta: "/videos/<id>-tarjeta.mp4", portada: "/videos/<id>-portada.jpg" }.
  * Mientras video sea null, la sección de video no aparece.
  */
 
@@ -41,7 +41,8 @@ export type Solucion = {
   caso?: { etiqueta: string; texto: string; ligas?: { texto: string; url: string }[] };
   /** Mensaje que se escribe solo al abrir WhatsApp */
   whatsapp: string;
-  video: { mp4: string; portada: string } | null;
+  /** mp4: video con sonido para la página del demo; tarjeta: versión ligera sin sonido para el inicio */
+  video: { mp4: string; tarjeta: string; portada: string; vertical?: boolean } | null;
   /** Liga del demo funcional (con base de datos real). null mientras no esté publicado. */
   demoReal: string | null;
 };
@@ -91,7 +92,7 @@ export const SOLUCIONES: Solucion[] = [
     ],
     caso: { etiqueta: "Ya opera en:", texto: "Gorilla Crown y Perfumería Frizzia." },
     whatsapp: "Hola, vi el demo del asistente de redes de Solvera Labs y quiero informes",
-    video: null,
+    video: { mp4: "/videos/asistente.mp4", tarjeta: "/videos/asistente-tarjeta.mp4", portada: "/videos/asistente-portada.jpg" },
     demoReal: null,
   },
   {
@@ -158,7 +159,7 @@ export const SOLUCIONES: Solucion[] = [
       texto: "el plan de mejora continua de Gorilla Crown se lleva en un tablero así.",
     },
     whatsapp: "Hola, vi el demo del organizador de proyectos de Solvera Labs y quiero informes",
-    video: null,
+    video: { mp4: "/videos/tablero.mp4", tarjeta: "/videos/tablero-tarjeta.mp4", portada: "/videos/tablero-portada.jpg" },
     demoReal: null,
   },
   {
@@ -195,7 +196,7 @@ export const SOLUCIONES: Solucion[] = [
       ligas: GORILLA_CROWN,
     },
     whatsapp: "Hola, vi el demo de automatización de procesos de Solvera Labs y quiero informes",
-    video: null,
+    video: { mp4: "/videos/procesos.mp4", tarjeta: "/videos/procesos-tarjeta.mp4", portada: "/videos/procesos-portada.jpg", vertical: true },
     demoReal: null,
   },
   {

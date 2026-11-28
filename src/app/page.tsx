@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Icon } from "@/components/Icon";
 import { VistaPrevia } from "@/components/VistaPrevia";
+import { VideoTarjeta } from "@/components/VideoTarjeta";
 import { CLIENTES } from "@/data/portafolio";
 import { PAGINAS_WEB, SOLUCIONES } from "@/data/soluciones";
 import { MENSAJE_DIAGNOSTICO, MENSAJE_GENERAL, waLink } from "@/lib/whatsapp";
@@ -98,17 +99,7 @@ export default function Inicio() {
                   <Link key={s.id} className="card group gap-0 overflow-hidden p-0" href={`/demos/${s.id}`}>
                     <div className="relative aspect-[16/10] overflow-hidden border-b border-line bg-peach">
                       {s.video ? (
-                        <video
-                          className="h-full w-full object-cover"
-                          src={s.video.mp4}
-                          poster={s.video.portada}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          preload="metadata"
-                          aria-hidden="true"
-                        />
+                        <VideoTarjeta src={s.video.tarjeta} portada={s.video.portada} />
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img

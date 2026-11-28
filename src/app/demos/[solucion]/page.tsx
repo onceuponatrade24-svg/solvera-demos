@@ -1,3 +1,4 @@
+import { VideoDemo } from "@/components/VideoDemo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -97,7 +98,9 @@ export default async function PaginaSolucion({ params }: { params: Params }) {
             </aside>
 
             {/* 6. Video: se agrega en el paso 3 (no aparece mientras no exista) */}
-            <div style={{ gridArea: "video" }} hidden={!s.video} />
+            <div style={{ gridArea: "video" }} hidden={!s.video}>
+              {s.video && <VideoDemo video={s.video} titulo={s.nombre} />}
+            </div>
 
             {/* 7-8. WhatsApp y caso real */}
             <div className="grid gap-4" style={{ gridArea: "cta" }}>
