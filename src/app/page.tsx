@@ -96,21 +96,23 @@ export default function Inicio() {
               <h2 className={GRUPO_LABEL}>{g}</h2>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(min(290px,100%),1fr))] gap-5">
                 {SOLUCIONES.filter((s) => s.grupo === g).map((s) => (
-                  <Link key={s.id} className="card group gap-0 overflow-hidden p-0" href={`/demos/${s.id}`}>
+                  <div key={s.id} className="card group gap-0 overflow-hidden p-0">
                     <div className="relative aspect-[16/10] overflow-hidden border-b border-line bg-peach">
                       {s.video ? (
-                        <VideoTarjeta src={s.video.tarjeta} portada={s.video.portada} />
+                        <VideoTarjeta src={s.video.mp4} portada={s.video.portada} titulo={s.nombre} />
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
+                        <Link href={`/demos/${s.id}`} className="block h-full w-full" tabIndex={-1} aria-hidden="true">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={`/previews/${s.id}.webp`}
                           alt={`Vista previa del demo ${s.nombre}`}
                           loading="lazy"
                           className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
                         />
+                        </Link>
                       )}
                     </div>
-                    <div className="flex flex-1 flex-col gap-2 p-5">
+                    <Link href={`/demos/${s.id}`} className="flex flex-1 flex-col gap-2 p-5">
                       <div className="flex items-center gap-3">
                         <Icon name={s.icono} />
                         <h3 className="text-lg font-extrabold leading-tight">{s.nombre}</h3>
@@ -120,8 +122,8 @@ export default function Inicio() {
                         <b className="whitespace-nowrap font-extrabold">{s.precio}</b>
                         <span className="whitespace-nowrap font-bold text-solar">Probar demo →</span>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 ))}
               </div>
             </div>
